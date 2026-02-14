@@ -40,13 +40,16 @@ function createMonthGrid(monthDate: Date): Array<string | null> {
   return [...cells, ...Array<string | null>(trailingEmpty).fill(null)];
 }
 
-function getSleepState(metrics: DayMetrics | undefined, goalSleep: number): "none" | "partial" | "done" {
+function getSleepState(metrics: DayMetrics | undefined): "none" | "low" | "medium" | "high" {
   const value = metrics?.sleepHours ?? 0;
-  if (value >= goalSleep) {
-    return "done";
+  if (value >= 9) {
+    return "high";
   }
-  if (value > 0) {
-    return "partial";
+  if (value >= 6 && value <= 8) {
+    return "medium";
+  }
+  if (value >= 3 && value <= 5) {
+    return "low";
   }
 
   return "none";
@@ -77,27 +80,31 @@ function CircleDayNode({
   index: number;
   total: number;
   selected: boolean;
-  sleepState: "none" | "partial" | "done";
+  sleepState: "none" | "low" | "medium" | "high";
   stickerImageSrc: string | null;
   isWorkDay: boolean;
   onClick: () => void;
 }) {
-  const angle = (360 / total) * index - 90;
+  const angle = (360 / total) * index;
+  const daySizeClass = total > 30 ? "h-9 w-9 text-[11px]" : "h-10 w-10 text-xs";
+  const ringRadius = total > 30 ? 150 : 146;
   const sleepClass =
-    sleepState === "done"
+    sleepState === "high"
       ? "border-emerald-400 bg-emerald-200 text-emerald-900"
-      : sleepState === "partial"
-        ? "border-rose-300 bg-rose-100 text-rose-900"
-        : "border-rose-200 bg-white/90 text-rose-700";
+      : sleepState === "medium"
+        ? "border-amber-400 bg-amber-200 text-amber-900"
+        : sleepState === "low"
+          ? "border-red-400 bg-red-200 text-red-900"
+          : "border-rose-200 bg-white/90 text-rose-700";
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`absolute left-1/2 top-1/2 flex h-11 w-11 items-center justify-center rounded-2xl border text-xs font-semibold shadow-sm transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${sleepClass} ${
+      className={`absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl border font-semibold shadow-sm transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${daySizeClass} ${sleepClass} ${
         selected ? "ring-2 ring-rose-500 ring-offset-2 ring-offset-rose-50" : ""
       }`}
-      style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-125px) rotate(${-angle}deg)` }}
+      style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-${ringRadius}px) rotate(${-angle}deg)` }}
       aria-label={`День ${day}`}
       title={dateKey}
     >
@@ -219,22 +226,22 @@ export function MonthScreen() {
             Нажми на день, чтобы открыть редактирование. Цвет ячейки зависит от часов сна.
           </p>
 
-          <div className="relative mt-6 h-[320px] w-[320px] rounded-full border-2 border-rose-200 bg-rose-50/60">
+          <div className="relative mt-6 h-[360px] w-[360px] rounded-full border-2 border-rose-200 bg-rose-50/60">
             <div className="absolute inset-[58px] rounded-full border border-rose-200 bg-white/90 p-4 text-center">
               <p className="mt-5 text-sm font-medium text-rose-700">Трекер сна</p>
               <p className="mt-2 text-xl font-semibold text-rose-900">{monthLabel}</p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-rose-800">
-                <span className="rounded-full bg-emerald-200 px-2 py-1 text-emerald-900">сон 7+ ч</span>
-                <span className="rounded-full bg-rose-100 px-2 py-1">сон &lt; 7 ч</span>
+                <span className="rounded-full bg-red-200 px-2 py-1 text-red-900">сон 3-5 ч</span>
+                <span className="rounded-full bg-amber-200 px-2 py-1 text-amber-900">сон 6-8 ч</span>
+                <span className="rounded-full bg-emerald-200 px-2 py-1 text-emerald-900">сон 9+ ч</span>
                 <span className="rounded-full bg-blue-100 px-2 py-1">рабочий день</span>
-                <span className="rounded-full bg-amber-100 px-2 py-1">стикер</span>
               </div>
             </div>
 
             {dateKeys.map((dateKey, index) => {
               const day = Number(dateKey.slice(-2));
               const metrics = appState.metricsByDate[dateKey];
-              const sleepState = getSleepState(metrics, appState.goals.sleepHours);
+              const sleepState = getSleepState(metrics);
               const sticker = getStickerById(appState.stickersByDate[dateKey]);
               const isWorkDay = workDays.includes(dateKey);
 
@@ -272,16 +279,17 @@ export function MonthScreen() {
             }
 
             const metrics = appState.metricsByDate[dateKey];
-            const sleepState = getSleepState(metrics, appState.goals.sleepHours);
-            const hasSticker = Boolean(getStickerById(appState.stickersByDate[dateKey]));
+            const sleepState = getSleepState(metrics);
             const isWorkDay = workDays.includes(dateKey);
             const day = Number(dateKey.slice(-2));
             const bg =
-              sleepState === "done"
+              sleepState === "high"
                 ? "bg-emerald-200"
-                : sleepState === "partial"
-                  ? "bg-rose-100"
-                  : "bg-white/80";
+                : sleepState === "medium"
+                  ? "bg-amber-200"
+                  : sleepState === "low"
+                    ? "bg-red-200"
+                    : "bg-white/80";
 
             return (
               <button
@@ -296,11 +304,16 @@ export function MonthScreen() {
                 <div className="mt-1 flex items-center gap-1">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      sleepState === "done" ? "bg-emerald-500" : sleepState === "partial" ? "bg-rose-300" : "bg-rose-200"
+                      sleepState === "high"
+                        ? "bg-emerald-500"
+                        : sleepState === "medium"
+                          ? "bg-amber-500"
+                          : sleepState === "low"
+                            ? "bg-red-500"
+                            : "bg-rose-200"
                     }`}
                   />
                   {isWorkDay ? <span className="h-1.5 w-1.5 rounded-full bg-blue-400" /> : null}
-                  {hasSticker ? <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> : null}
                 </div>
               </button>
             );
@@ -359,11 +372,10 @@ export function MonthScreen() {
             {selectedIsWorkDay ? "Рабочий день отмечен" : "Отметить как рабочий день"}
           </Button>
           <span className="flex items-center gap-2 rounded-2xl bg-rose-100 px-3 py-2 text-sm text-rose-800">
-            Стикер:
             {selectedSticker ? (
               <Image src={selectedSticker.imageSrc} alt={selectedSticker.alt} width={24} height={24} className="h-6 w-6 rounded-full object-cover" />
             ) : (
-              " нет"
+              "нет"
             )}
           </span>
         </div>

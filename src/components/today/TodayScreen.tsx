@@ -57,6 +57,7 @@ function getCompletedTrackersCount(metrics: DayMetrics, state: AppState): number
 export function TodayScreen() {
   const [today] = useState(() => new Date());
   const todayKey = useMemo(() => formatDateKey(today), [today]);
+  const [waterToAdd, setWaterToAdd] = useState("");
 
   const [appState, setAppState] = useState<AppState>(() => {
     const initial = loadAppState();
@@ -132,6 +133,17 @@ export function TodayScreen() {
     );
   };
 
+  const addWaterIntake = () => {
+    const portion = parseNumericInput(waterToAdd);
+    if (!portion || portion <= 0) {
+      return;
+    }
+
+    const currentWater = dayMetrics.waterMl ?? 0;
+    updateTodayMetrics({ waterMl: currentWater + portion });
+    setWaterToAdd("");
+  };
+
   const toggleChoreDone = (choreId: string) => {
     setAppState((prev) => {
       const done = new Set(prev.choreLogByDate[todayKey] ?? []);
@@ -172,16 +184,27 @@ export function TodayScreen() {
       <Card>
         <h2 className="text-lg font-semibold text-rose-900">Метрики дня</h2>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
-            <span className="text-sm text-rose-800">Вода (мл)</span>
-            <Input
-              type="number"
-              min={0}
-              placeholder="0"
-              value={dayMetrics.waterMl ?? ""}
-              onChange={(event) => updateTodayMetrics({ waterMl: parseNumericInput(event.target.value) })}
-            />
-          </label>
+          <div className="space-y-2 rounded-2xl border border-rose-200 bg-rose-50/60 p-3">
+            <p className="text-sm text-rose-800">Вода за день: {dayMetrics.waterMl ?? 0} мл</p>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                placeholder="Сколько добавить"
+                value={waterToAdd}
+                onChange={(event) => setWaterToAdd(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addWaterIntake();
+                  }
+                }}
+              />
+              <Button className="h-10 px-4" onClick={addWaterIntake}>
+                Добавить
+              </Button>
+            </div>
+          </div>
 
           <label className="space-y-1">
             <span className="text-sm text-rose-800">Сон (часы)</span>
