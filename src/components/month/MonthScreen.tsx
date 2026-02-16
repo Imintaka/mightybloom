@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -6,12 +6,68 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
-import { formatDateKey, formatMonthKey, getDateKeysOfMonth, getMonthStart } from "@/lib/dates";
+import { getCompletedTrackersCount } from "@/lib/dayProgress";
+import { formatDateKey, getDateKeysOfMonth, getMonthStart } from "@/lib/dates";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import { getStickerById, getStickerByTrackers } from "@/lib/stickers";
-import type { AppState, DayMetrics } from "@/types/app.types";
+import type { AppState, DayMetrics, MonthTrackerColor } from "@/types/app.types";
 
 const WEEKDAY_SHORT = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+const TRACKER_COLOR_STYLES: Record<
+  MonthTrackerColor,
+  {
+    dot: string;
+    fill: string;
+    chip: string;
+    chipActive: string;
+    picker: string;
+    pickerActive: string;
+  }
+> = {
+  green: {
+    dot: "bg-emerald-500",
+    fill: "bg-emerald-200",
+    chip: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    chipActive: "border-emerald-400 bg-emerald-200 text-emerald-950",
+    picker: "border-emerald-300 bg-emerald-200",
+    pickerActive: "ring-2 ring-emerald-400",
+  },
+  mint: {
+    dot: "bg-teal-500",
+    fill: "bg-teal-200",
+    chip: "border-teal-200 bg-teal-50 text-teal-900",
+    chipActive: "border-teal-400 bg-teal-200 text-teal-950",
+    picker: "border-teal-300 bg-teal-200",
+    pickerActive: "ring-2 ring-teal-400",
+  },
+  sky: {
+    dot: "bg-sky-500",
+    fill: "bg-sky-200",
+    chip: "border-sky-200 bg-sky-50 text-sky-900",
+    chipActive: "border-sky-400 bg-sky-200 text-sky-950",
+    picker: "border-sky-300 bg-sky-200",
+    pickerActive: "ring-2 ring-sky-400",
+  },
+  amber: {
+    dot: "bg-amber-500",
+    fill: "bg-amber-200",
+    chip: "border-amber-200 bg-amber-50 text-amber-900",
+    chipActive: "border-amber-400 bg-amber-200 text-amber-950",
+    picker: "border-amber-300 bg-amber-200",
+    pickerActive: "ring-2 ring-amber-400",
+  },
+  rose: {
+    dot: "bg-rose-500",
+    fill: "bg-rose-200",
+    chip: "border-rose-200 bg-rose-50 text-rose-900",
+    chipActive: "border-rose-400 bg-rose-200 text-rose-950",
+    picker: "border-rose-300 bg-rose-200",
+    pickerActive: "ring-2 ring-rose-400",
+  },
+};
+
+const TRACKER_COLORS: MonthTrackerColor[] = ["green", "mint", "sky", "amber", "rose"];
 
 function parseMetricValue(raw: string): number | undefined {
   if (!raw.trim()) {
@@ -55,13 +111,12 @@ function getSleepState(metrics: DayMetrics | undefined): "none" | "low" | "mediu
   return "none";
 }
 
-function getCompletedTrackersCount(metrics: DayMetrics, state: AppState): number {
-  const waterDone = (metrics.waterMl ?? 0) >= state.goals.waterMl;
-  const sleepDone = (metrics.sleepHours ?? 0) >= state.goals.sleepHours;
-  const stepsDone = (metrics.steps ?? 0) >= state.goals.steps;
-  const workoutDone = Boolean(metrics.workoutDone);
+function generateTrackerId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
 
-  return [waterDone, sleepDone, stepsDone, workoutDone].filter(Boolean).length;
+  return `tracker-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
 function CircleDayNode({
@@ -72,7 +127,6 @@ function CircleDayNode({
   selected,
   sleepState,
   stickerImageSrc,
-  isWorkDay,
   onClick,
 }: {
   dateKey: string;
@@ -82,7 +136,6 @@ function CircleDayNode({
   selected: boolean;
   sleepState: "none" | "low" | "medium" | "high";
   stickerImageSrc: string | null;
-  isWorkDay: boolean;
   onClick: () => void;
 }) {
   const angle = (360 / total) * index;
@@ -114,17 +167,19 @@ function CircleDayNode({
           <Image src={stickerImageSrc} alt="" width={14} height={14} className="h-3.5 w-3.5 object-cover" />
         </span>
       ) : null}
-      {isWorkDay ? <span className="absolute -bottom-1 -left-1 h-2.5 w-2.5 rounded-full bg-blue-400" /> : null}
     </button>
   );
 }
 
 export function MonthScreen() {
+  const [today] = useState(() => new Date());
   const [appState, setAppState] = useState<AppState>(() => loadAppState());
-  const [monthDate, setMonthDate] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  const [selectedDateKey, setSelectedDateKey] = useState(() => formatDateKey(new Date()));
+  const [monthDate, setMonthDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDateKey, setSelectedDateKey] = useState(() => formatDateKey(today));
+  const [newTrackerTitle, setNewTrackerTitle] = useState("");
+  const [newTrackerColor, setNewTrackerColor] = useState<MonthTrackerColor>("green");
+  const [activeTrackerId, setActiveTrackerId] = useState<string | null>(null);
 
-  const monthKey = useMemo(() => formatMonthKey(monthDate), [monthDate]);
   const dateKeys = useMemo(() => getDateKeysOfMonth(monthDate), [monthDate]);
   const monthGrid = useMemo(() => createMonthGrid(monthDate), [monthDate]);
   const monthLabel = useMemo(
@@ -141,10 +196,12 @@ export function MonthScreen() {
   }, [appState]);
 
   const selectedMetrics = appState.metricsByDate[selectedDateKey] ?? {};
-  const workDays = appState.workDaysByMonth[monthKey] ?? [];
-  const selectedIsWorkDay = workDays.includes(selectedDateKey);
   const selectedStickerId = appState.stickersByDate[selectedDateKey];
   const selectedSticker = getStickerById(selectedStickerId);
+  const activeTracker =
+    appState.monthTrackers.find((tracker) => tracker.id === activeTrackerId) ?? appState.monthTrackers[0] ?? null;
+  const currentActiveTrackerId = activeTracker?.id ?? null;
+  const activeTrackerStyle = activeTracker ? TRACKER_COLOR_STYLES[activeTracker.color] : null;
 
   const goToMonth = (offset: number) => {
     const nextMonthDate = shiftMonth(monthDate, offset);
@@ -180,21 +237,103 @@ export function MonthScreen() {
     });
   };
 
-  const toggleWorkDayForSelected = () => {
+  const addMonthTracker = () => {
+    const title = newTrackerTitle.trim();
+    if (!title) {
+      return;
+    }
+
+    const tracker = {
+      id: generateTrackerId(),
+      title,
+      color: newTrackerColor,
+    };
+
+    setAppState((prev) => ({
+      ...prev,
+      monthTrackers: [...prev.monthTrackers, tracker],
+    }));
+    setNewTrackerTitle("");
+    setActiveTrackerId(tracker.id);
+  };
+
+  const renameActiveTracker = () => {
+    if (!activeTracker || !currentActiveTrackerId) {
+      return;
+    }
+
+    const nextTitle = window.prompt("Новое название трекера", activeTracker.title)?.trim();
+    if (!nextTitle) {
+      return;
+    }
+
+    setAppState((prev) => ({
+      ...prev,
+      monthTrackers: prev.monthTrackers.map((tracker) =>
+        tracker.id === currentActiveTrackerId ? { ...tracker, title: nextTitle } : tracker,
+      ),
+    }));
+  };
+
+  const deleteActiveTracker = () => {
+    if (!currentActiveTrackerId) {
+      return;
+    }
+
+    const approved = window.confirm("Удалить выбранный трекер и все его отметки в календаре?");
+    if (!approved) {
+      return;
+    }
+
     setAppState((prev) => {
-      const monthWorkDays = new Set(prev.workDaysByMonth[monthKey] ?? []);
-      if (monthWorkDays.has(selectedDateKey)) {
-        monthWorkDays.delete(selectedDateKey);
-      } else {
-        monthWorkDays.add(selectedDateKey);
+      const nextTrackers = prev.monthTrackers.filter((tracker) => tracker.id !== currentActiveTrackerId);
+      const nextLog: typeof prev.monthTrackerLogByDate = {};
+
+      for (const [dateKey, trackerIds] of Object.entries(prev.monthTrackerLogByDate)) {
+        const filteredTrackerIds = trackerIds.filter((trackerId) => trackerId !== currentActiveTrackerId);
+        if (filteredTrackerIds.length > 0) {
+          nextLog[dateKey] = filteredTrackerIds;
+        }
       }
 
       return {
         ...prev,
-        workDaysByMonth: {
-          ...prev.workDaysByMonth,
-          [monthKey]: Array.from(monthWorkDays).sort(),
-        },
+        monthTrackers: nextTrackers,
+        monthTrackerLogByDate: nextLog,
+      };
+    });
+
+    setActiveTrackerId(null);
+  };
+
+  const toggleActiveTrackerDay = (dateKey: string) => {
+    setSelectedDateKey(dateKey);
+    if (!currentActiveTrackerId) {
+      return;
+    }
+
+    setAppState((prev) => {
+      const existing = prev.monthTrackerLogByDate[dateKey] ?? [];
+      const nextIds = new Set(existing);
+
+      if (nextIds.has(currentActiveTrackerId)) {
+        nextIds.delete(currentActiveTrackerId);
+      } else {
+        nextIds.add(currentActiveTrackerId);
+      }
+
+      const nextDateTrackerIds = Array.from(nextIds).sort();
+      const nextLog = { ...prev.monthTrackerLogByDate };
+
+      if (nextDateTrackerIds.length === 0) {
+        delete nextLog[dateKey];
+      } else {
+        nextLog[dateKey] = nextDateTrackerIds;
+      }
+
+      return {
+        ...prev,
+        monthTrackerLogByDate: nextLog,
       };
     });
   };
@@ -234,7 +373,6 @@ export function MonthScreen() {
                 <span className="rounded-full bg-red-200 px-2 py-1 text-red-900">сон 3-5 ч</span>
                 <span className="rounded-full bg-amber-200 px-2 py-1 text-amber-900">сон 6-8 ч</span>
                 <span className="rounded-full bg-emerald-200 px-2 py-1 text-emerald-900">сон 9+ ч</span>
-                <span className="rounded-full bg-blue-100 px-2 py-1">рабочий день</span>
               </div>
             </div>
 
@@ -243,7 +381,6 @@ export function MonthScreen() {
               const metrics = appState.metricsByDate[dateKey];
               const sleepState = getSleepState(metrics);
               const sticker = getStickerById(appState.stickersByDate[dateKey]);
-              const isWorkDay = workDays.includes(dateKey);
 
               return (
                 <CircleDayNode
@@ -255,7 +392,6 @@ export function MonthScreen() {
                   selected={selectedDateKey === dateKey}
                   sleepState={sleepState}
                   stickerImageSrc={sticker?.imageSrc ?? null}
-                  isWorkDay={isWorkDay}
                   onClick={() => selectDate(dateKey)}
                 />
               );
@@ -265,8 +401,76 @@ export function MonthScreen() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-rose-900">Резервный вид: сетка месяца</h2>
-        <div className="mt-3 grid grid-cols-7 gap-1.5">
+        <h2 className="text-lg font-semibold text-rose-900">Резервный вид: трекер-сетка месяца</h2>
+        <p className="mt-1 text-sm text-rose-700">Добавь кнопку-трекер и отмечай дни в сетке. У каждого трекера свой календарный слой.</p>
+
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/60 p-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              placeholder="Например: День без стресса"
+              value={newTrackerTitle}
+              onChange={(event) => setNewTrackerTitle(event.target.value)}
+            />
+            <Button className="sm:w-auto" onClick={addMonthTracker}>
+              Добавить кнопку
+            </Button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {TRACKER_COLORS.map((color) => {
+              const style = TRACKER_COLOR_STYLES[color];
+
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setNewTrackerColor(color)}
+                  className={`h-7 w-7 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${style.picker} ${
+                    newTrackerColor === color ? style.pickerActive : ""
+                  }`}
+                  aria-label={`Цвет трекера: ${color}`}
+                  title={color}
+                />
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {appState.monthTrackers.map((tracker) => {
+              const style = TRACKER_COLOR_STYLES[tracker.color];
+              const isActive = tracker.id === currentActiveTrackerId;
+
+              return (
+                <button
+                  key={tracker.id}
+                  type="button"
+                  onClick={() => setActiveTrackerId(tracker.id)}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                    isActive ? style.chipActive : style.chip
+                  }`}
+                >
+                  {tracker.title}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="secondary" className="sm:w-auto" onClick={renameActiveTracker} disabled={!currentActiveTrackerId}>
+              Переименовать
+            </Button>
+            <Button
+              variant="secondary"
+              className="sm:w-auto"
+              onClick={deleteActiveTracker}
+              disabled={!currentActiveTrackerId}
+            >
+              Удалить
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 gap-1.5">
           {WEEKDAY_SHORT.map((weekday) => (
             <p key={weekday} className="text-center text-xs font-semibold text-rose-700">
               {weekday}
@@ -278,43 +482,23 @@ export function MonthScreen() {
               return <div key={`empty-${index}`} className="h-14 rounded-xl bg-rose-50/40" />;
             }
 
-            const metrics = appState.metricsByDate[dateKey];
-            const sleepState = getSleepState(metrics);
-            const isWorkDay = workDays.includes(dateKey);
             const day = Number(dateKey.slice(-2));
-            const bg =
-              sleepState === "high"
-                ? "bg-emerald-200"
-                : sleepState === "medium"
-                  ? "bg-amber-200"
-                  : sleepState === "low"
-                    ? "bg-red-200"
-                    : "bg-white/80";
+            const isMarked = currentActiveTrackerId
+              ? (appState.monthTrackerLogByDate[dateKey] ?? []).includes(currentActiveTrackerId)
+              : false;
+            const bgClass = isMarked && activeTrackerStyle ? activeTrackerStyle.fill : "bg-white/80";
 
             return (
               <button
                 key={dateKey}
                 type="button"
-                onClick={() => selectDate(dateKey)}
-                className={`h-14 rounded-xl border border-rose-200 p-1 text-left transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${bg} ${
+                onClick={() => toggleActiveTrackerDay(dateKey)}
+                className={`h-14 rounded-xl border border-rose-200 p-1 text-left transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${bgClass} ${
                   selectedDateKey === dateKey ? "ring-2 ring-rose-500" : ""
                 }`}
               >
                 <p className="text-xs font-semibold text-rose-900">{day}</p>
-                <div className="mt-1 flex items-center gap-1">
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      sleepState === "high"
-                        ? "bg-emerald-500"
-                        : sleepState === "medium"
-                          ? "bg-amber-500"
-                          : sleepState === "low"
-                            ? "bg-red-500"
-                            : "bg-rose-200"
-                    }`}
-                  />
-                  {isWorkDay ? <span className="h-1.5 w-1.5 rounded-full bg-blue-400" /> : null}
-                </div>
+                {isMarked && activeTrackerStyle ? <span className={`mt-1 block h-1.5 w-1.5 rounded-full ${activeTrackerStyle.dot}`} /> : null}
               </button>
             );
           })}
@@ -368,9 +552,6 @@ export function MonthScreen() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button variant={selectedIsWorkDay ? "primary" : "secondary"} onClick={toggleWorkDayForSelected}>
-            {selectedIsWorkDay ? "Рабочий день отмечен" : "Отметить как рабочий день"}
-          </Button>
           <span className="flex items-center gap-2 rounded-2xl bg-rose-100 px-3 py-2 text-sm text-rose-800">
             {selectedSticker ? (
               <Image src={selectedSticker.imageSrc} alt={selectedSticker.alt} width={24} height={24} className="h-6 w-6 rounded-full object-cover" />

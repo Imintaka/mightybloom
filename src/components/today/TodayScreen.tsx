@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { formatDateKey } from "@/lib/dates";
+import { getCompletedTrackersCount, getDayProgress } from "@/lib/dayProgress";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import { getStickerById, getStickerByTrackers } from "@/lib/stickers";
 import type { AppState, DayMetrics } from "@/types/app.types";
@@ -45,15 +46,6 @@ function getTodayChoreIds(state: AppState, date: Date, dateKey: string): string[
     .map((chore) => chore.id);
 }
 
-function getCompletedTrackersCount(metrics: DayMetrics, state: AppState): number {
-  const waterDone = (metrics.waterMl ?? 0) >= state.goals.waterMl;
-  const sleepDone = (metrics.sleepHours ?? 0) >= state.goals.sleepHours;
-  const stepsDone = (metrics.steps ?? 0) >= state.goals.steps;
-  const workoutDone = Boolean(metrics.workoutDone);
-
-  return [waterDone, sleepDone, stepsDone, workoutDone].filter(Boolean).length;
-}
-
 export function TodayScreen() {
   const [today] = useState(() => new Date());
   const todayKey = useMemo(() => formatDateKey(today), [today]);
@@ -85,20 +77,19 @@ export function TodayScreen() {
   }, [appState]);
 
   const dayMetrics: DayMetrics = appState.metricsByDate[todayKey] ?? {};
-  const completedChores = appState.choreLogByDate[todayKey] ?? [];
-
-  const waterClosed = (dayMetrics.waterMl ?? 0) >= appState.goals.waterMl;
-  const sleepClosed = (dayMetrics.sleepHours ?? 0) >= appState.goals.sleepHours;
-  const stepsClosed = (dayMetrics.steps ?? 0) >= appState.goals.steps;
-  const workoutClosed = Boolean(dayMetrics.workoutDone);
-  const coreClosedCount = [waterClosed, sleepClosed, stepsClosed].filter(Boolean).length;
-  const closedCount = [waterClosed, sleepClosed, stepsClosed, workoutClosed].filter(Boolean).length;
-  const dayClosed = coreClosedCount >= 2;
+  const completedChores = useMemo(() => appState.choreLogByDate[todayKey] ?? [], [appState.choreLogByDate, todayKey]);
+  const dayProgress = getDayProgress(dayMetrics, appState);
 
   const todaySticker = appState.stickersByDate[todayKey];
 
   const stickerConfig = getStickerById(todaySticker);
-  const choresForToday = getTodayChoreIds(appState, today, todayKey);
+  const choresForToday = useMemo(() => getTodayChoreIds(appState, today, todayKey), [appState, today, todayKey]);
+  const choreById = useMemo(() => new Map(appState.chores.map((chore) => [chore.id, chore])), [appState.chores]);
+  const completedChoresSet = useMemo(() => new Set(completedChores), [completedChores]);
+  const completedChoresForTodayCount = useMemo(
+    () => choresForToday.filter((id) => completedChoresSet.has(id)).length,
+    [choresForToday, completedChoresSet],
+  );
 
   const withTodayStickerByTrackers = (nextState: AppState): AppState => {
     const metrics = nextState.metricsByDate[todayKey] ?? {};
@@ -246,26 +237,26 @@ export function TodayScreen() {
       <Card>
         <h2 className="text-lg font-semibold text-rose-900">Прогресс дня</h2>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-          <div className={`rounded-2xl px-3 py-2 ${waterClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div className={`rounded-2xl px-3 py-2 ${dayProgress.waterClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
             Вода
           </div>
-          <div className={`rounded-2xl px-3 py-2 ${sleepClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div className={`rounded-2xl px-3 py-2 ${dayProgress.sleepClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
             Сон
           </div>
-          <div className={`rounded-2xl px-3 py-2 ${stepsClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div className={`rounded-2xl px-3 py-2 ${dayProgress.stepsClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
             Шаги
           </div>
-          <div className={`rounded-2xl px-3 py-2 ${workoutClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div className={`rounded-2xl px-3 py-2 ${dayProgress.workoutClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
             Тренировка
           </div>
         </div>
         <p className="mt-3 text-sm text-rose-800">
-          Закрыто разделов: <span className="font-semibold text-rose-900">{closedCount}/4</span>. Статус дня:{" "}
-          <span className="font-semibold text-rose-900">{dayClosed ? "день закрыт" : "в процессе"}</span>.
+          Закрыто разделов: <span className="font-semibold text-rose-900">{dayProgress.closedCount}/4</span>. Статус дня:{" "}
+          <span className="font-semibold text-rose-900">{dayProgress.dayClosed ? "день закрыт" : "в процессе"}</span>.
         </p>
-        {dayClosed ? (
+        {dayProgress.dayClosed ? (
           <p className="mt-2 rounded-2xl bg-rose-100 px-3 py-2 text-sm text-rose-900">
-            {stickerConfig?.phrase ?? getStickerByTrackers(closedCount).phrase}
+            {stickerConfig?.phrase ?? getStickerByTrackers(dayProgress.closedCount).phrase}
           </p>
         ) : (
           <p className="mt-2 text-sm text-rose-700">Чтобы закрыть день, нужно выполнить минимум 2 из 3: вода, сон, шаги.</p>
@@ -276,19 +267,19 @@ export function TodayScreen() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-rose-900">Дела на сегодня</h2>
           <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-800">
-            {completedChores.filter((id) => choresForToday.includes(id)).length}/{choresForToday.length || 0}
+            {completedChoresForTodayCount}/{choresForToday.length || 0}
           </span>
         </div>
 
         {choresForToday.length > 0 ? (
           <ul className="mt-3 space-y-2">
             {choresForToday.map((choreId) => {
-              const chore = appState.chores.find((item) => item.id === choreId);
+              const chore = choreById.get(choreId);
               if (!chore) {
                 return null;
               }
 
-              const done = completedChores.includes(chore.id);
+              const done = completedChoresSet.has(chore.id);
               return (
                 <li
                   key={chore.id}
