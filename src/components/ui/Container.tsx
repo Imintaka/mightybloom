@@ -6,7 +6,7 @@ type ContainerProps = {
 };
 
 export function Container({ children, className }: ContainerProps) {
-  const classes = ["mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8", className]
+  const classes = ["screen-enter mx-auto w-full max-w-6xl px-4 pb-12 pt-6 sm:px-6 md:pt-8 lg:px-8", className]
     .filter(Boolean)
     .join(" ");
 

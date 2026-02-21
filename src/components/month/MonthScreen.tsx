@@ -154,8 +154,8 @@ function CircleDayNode({
     <button
       type="button"
       onClick={onClick}
-      className={`absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl border font-semibold shadow-sm transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${daySizeClass} ${sleepClass} ${
-        selected ? "ring-2 ring-rose-500 ring-offset-2 ring-offset-rose-50" : ""
+      className={`absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl border font-semibold shadow-sm transition duration-200 hover:scale-105 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${daySizeClass} ${sleepClass} ${
+        selected ? "ring-2 ring-rose-500 ring-offset-2 ring-offset-rose-100" : ""
       }`}
       style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-${ringRadius}px) rotate(${-angle}deg)` }}
       aria-label={`День ${day}`}
@@ -339,12 +339,13 @@ export function MonthScreen() {
   };
 
   return (
-    <Container className="space-y-4 pb-10">
-      <Card className="bg-gradient-to-br from-rose-100/90 via-pink-50/95 to-white">
+    <Container className="space-y-5 pb-12">
+      <Card className="paper-grid relative overflow-hidden bg-gradient-to-br from-rose-100/80 via-pink-50/95 to-white">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-rose-200/60 blur-2xl" />
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-rose-900">Месяц</h1>
-            <p className="mt-1 text-sm text-rose-800/80">Круговой трекер сна и редактирование дня</p>
+            <h1 className="text-2xl font-bold tracking-tight text-rose-950 sm:text-[1.75rem]">Месяц</h1>
+            <p className="mt-1 text-sm font-medium text-rose-800/85">Круговой трекер сна и редактирование дня</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" className="h-9 px-3" onClick={() => goToMonth(-1)}>
@@ -355,24 +356,28 @@ export function MonthScreen() {
             </Button>
           </div>
         </div>
-        <p className="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-sm font-medium capitalize text-rose-900">{monthLabel}</p>
+        <p className="mt-3 inline-flex rounded-2xl border border-rose-200 bg-white/75 px-3 py-2 text-sm font-semibold capitalize text-rose-900">
+          {monthLabel}
+        </p>
       </Card>
 
-      <Card>
+      <Card className="paper-grid">
         <div className="flex flex-col items-center">
-          <h2 className="text-lg font-semibold text-rose-900">Круговой трекер сна</h2>
-          <p className="mt-1 text-center text-sm text-rose-700">
+          <h2 className="text-lg font-semibold text-rose-950">Круговой трекер сна</h2>
+          <p className="mt-1 max-w-md text-center text-sm text-rose-700">
             Нажми на день, чтобы открыть редактирование. Цвет ячейки зависит от часов сна.
           </p>
 
-          <div className="relative mt-6 h-[360px] w-[360px] rounded-full border-2 border-rose-200 bg-rose-50/60">
-            <div className="absolute inset-[58px] rounded-full border border-rose-200 bg-white/90 p-4 text-center">
+          <div className="relative mt-6 h-[360px] w-[360px] rounded-full border-2 border-rose-200/90 bg-rose-50/65 shadow-[0_22px_50px_-35px_rgba(190,24,93,0.65)]">
+            <div className="absolute inset-[58px] rounded-full border border-rose-200 bg-white/92 p-4 text-center shadow-inner">
               <p className="mt-5 text-sm font-medium text-rose-700">Трекер сна</p>
-              <p className="mt-2 text-xl font-semibold text-rose-900">{monthLabel}</p>
+              <p className="mt-2 text-xl font-semibold capitalize text-rose-950">{monthLabel}</p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-rose-800">
-                <span className="rounded-full bg-red-200 px-2 py-1 text-red-900">сон 3-5 ч</span>
-                <span className="rounded-full bg-amber-200 px-2 py-1 text-amber-900">сон 6-8 ч</span>
-                <span className="rounded-full bg-emerald-200 px-2 py-1 text-emerald-900">сон 9+ ч</span>
+                <span className="rounded-full border border-red-300/70 bg-red-200 px-2 py-1 font-semibold text-red-900">сон 3-5 ч</span>
+                <span className="rounded-full border border-amber-300/70 bg-amber-200 px-2 py-1 font-semibold text-amber-900">сон 6-8 ч</span>
+                <span className="rounded-full border border-emerald-300/70 bg-emerald-200 px-2 py-1 font-semibold text-emerald-900">
+                  сон 9+ ч
+                </span>
               </div>
             </div>
 
@@ -401,10 +406,10 @@ export function MonthScreen() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-rose-900">Резервный вид: трекер-сетка месяца</h2>
+        <h2 className="text-lg font-semibold text-rose-950">Резервный вид: трекер-сетка месяца</h2>
         <p className="mt-1 text-sm text-rose-700">Добавь кнопку-трекер и отмечай дни в сетке. У каждого трекера свой календарный слой.</p>
 
-        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/60 p-3">
+        <div className="mt-4 rounded-2xl border border-rose-200/85 bg-rose-50/60 p-3.5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input
               placeholder="Например: День без стресса"
@@ -416,7 +421,7 @@ export function MonthScreen() {
             </Button>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
             {TRACKER_COLORS.map((color) => {
               const style = TRACKER_COLOR_STYLES[color];
 
@@ -425,7 +430,7 @@ export function MonthScreen() {
                   key={color}
                   type="button"
                   onClick={() => setNewTrackerColor(color)}
-                  className={`h-7 w-7 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${style.picker} ${
+                  className={`h-7 w-7 rounded-full border transition duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${style.picker} ${
                     newTrackerColor === color ? style.pickerActive : ""
                   }`}
                   aria-label={`Цвет трекера: ${color}`}
@@ -435,7 +440,7 @@ export function MonthScreen() {
             })}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2.5">
             {appState.monthTrackers.map((tracker) => {
               const style = TRACKER_COLOR_STYLES[tracker.color];
               const isActive = tracker.id === currentActiveTrackerId;
@@ -445,7 +450,7 @@ export function MonthScreen() {
                   key={tracker.id}
                   type="button"
                   onClick={() => setActiveTrackerId(tracker.id)}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                  className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
                     isActive ? style.chipActive : style.chip
                   }`}
                 >
@@ -470,7 +475,7 @@ export function MonthScreen() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-7 gap-1.5">
+        <div className="mt-4 grid grid-cols-7 gap-1.5 rounded-2xl border border-rose-100/90 bg-rose-50/30 p-2">
           {WEEKDAY_SHORT.map((weekday) => (
             <p key={weekday} className="text-center text-xs font-semibold text-rose-700">
               {weekday}
@@ -479,7 +484,7 @@ export function MonthScreen() {
 
           {monthGrid.map((dateKey, index) => {
             if (!dateKey) {
-              return <div key={`empty-${index}`} className="h-14 rounded-xl bg-rose-50/40" />;
+              return <div key={`empty-${index}`} className="h-14 rounded-xl bg-rose-50/55" />;
             }
 
             const day = Number(dateKey.slice(-2));
@@ -493,8 +498,8 @@ export function MonthScreen() {
                 key={dateKey}
                 type="button"
                 onClick={() => toggleActiveTrackerDay(dateKey)}
-                className={`h-14 rounded-xl border border-rose-200 p-1 text-left transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${bgClass} ${
-                  selectedDateKey === dateKey ? "ring-2 ring-rose-500" : ""
+                className={`h-14 rounded-xl border border-rose-200/85 p-1 text-left transition duration-200 hover:scale-[1.02] hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${bgClass} ${
+                  selectedDateKey === dateKey ? "ring-2 ring-rose-500 ring-offset-1 ring-offset-rose-50" : ""
                 }`}
               >
                 <p className="text-xs font-semibold text-rose-900">{day}</p>
@@ -506,7 +511,7 @@ export function MonthScreen() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-rose-900">Редактирование дня: {selectedDateKey}</h2>
+        <h2 className="text-lg font-semibold text-rose-950">Редактирование дня: {selectedDateKey}</h2>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="space-y-1">
             <span className="text-sm text-rose-800">Сон (часы)</span>
@@ -539,20 +544,20 @@ export function MonthScreen() {
             />
           </label>
 
-          <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-3">
+          <div className="rounded-2xl border border-rose-200/85 bg-rose-50/65 p-3.5">
             <p className="text-sm text-rose-800">Тренировка</p>
             <Button
               variant={selectedMetrics.workoutDone ? "primary" : "secondary"}
               className="mt-2 w-full"
               onClick={() => updateSelectedMetrics({ workoutDone: !selectedMetrics.workoutDone })}
             >
-              {selectedMetrics.workoutDone ? "Done" : "Not done"}
+              {selectedMetrics.workoutDone ? "Сделано" : "Не отмечено"}
             </Button>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-2 rounded-2xl bg-rose-100 px-3 py-2 text-sm text-rose-800">
+          <span className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-100/70 px-3 py-2 text-sm text-rose-800">
             {selectedSticker ? (
               <Image src={selectedSticker.imageSrc} alt={selectedSticker.alt} width={24} height={24} className="h-6 w-6 rounded-full object-cover" />
             ) : (

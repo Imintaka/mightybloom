@@ -9,6 +9,7 @@ export type Chore = {
   id: string;
   title: string;
   schedule: { type: "weekly"; weekdays: number[] } | { type: "none" };
+  startsOn?: string;
   isActive: boolean;
 };
 

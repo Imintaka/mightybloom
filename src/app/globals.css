@@ -2,9 +2,116 @@
 
 :root {
   color-scheme: light;
+  --notepad-rose: #f43f7f;
+  --notepad-ink: #702548;
+  --notepad-surface: rgba(255, 255, 255, 0.78);
+  --notepad-border: rgba(253, 164, 175, 0.36);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
   font-family: "Nunito", "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--notepad-ink);
+  background:
+    radial-gradient(1100px 500px at -8% -12%, rgba(251, 113, 133, 0.24), transparent 60%),
+    radial-gradient(800px 380px at 108% 4%, rgba(244, 114, 182, 0.22), transparent 55%),
+    linear-gradient(180deg, #fff8fb 0%, #fff1f7 34%, #fff8fc 100%);
+}
+
+body::before,
+body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+  filter: blur(44px);
+  opacity: 0.65;
+}
+
+body::before {
+  top: -110px;
+  right: -120px;
+  height: 300px;
+  width: 300px;
+  border-radius: 999px;
+  background: rgba(253, 164, 175, 0.55);
+}
+
+body::after {
+  bottom: -130px;
+  left: -100px;
+  height: 320px;
+  width: 320px;
+  border-radius: 999px;
+  background: rgba(251, 207, 232, 0.6);
+}
+
+::selection {
+  background: rgba(251, 113, 133, 0.25);
+  color: #5f163c;
+}
+
+::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  background: rgba(251, 113, 133, 0.56);
+}
+
+.surface-card {
+  border: 1px solid var(--notepad-border);
+  background: var(--notepad-surface);
+  box-shadow:
+    0 20px 48px -32px rgba(190, 24, 93, 0.45),
+    0 3px 10px rgba(255, 255, 255, 0.6) inset;
+  backdrop-filter: blur(10px);
+}
+
+.paper-grid {
+  background-image:
+    linear-gradient(to right, rgba(251, 113, 133, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(251, 113, 133, 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.screen-enter {
+  animation: screen-enter 0.48s ease-out both;
+}
+
+.soft-float {
+  animation: soft-float 6s ease-in-out infinite;
+}
+
+@keyframes screen-enter {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes soft-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }

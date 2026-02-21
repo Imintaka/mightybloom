@@ -6,10 +6,7 @@ type CardProps = {
 };
 
 export function Card({ children, className }: CardProps) {
-  const classes = [
-    "rounded-3xl border border-rose-200/80 bg-white/80 p-5 shadow-sm backdrop-blur",
-    className,
-  ]
+  const classes = ["surface-card rounded-[1.75rem] p-5 transition-shadow duration-200 md:p-6", className]
     .filter(Boolean)
     .join(" ");
 

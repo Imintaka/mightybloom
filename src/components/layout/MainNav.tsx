@@ -28,12 +28,12 @@ export function MainNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mx-auto flex w-full max-w-5xl items-center gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
+    <nav className="mx-auto flex w-full max-w-6xl items-center gap-2.5 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
       {NAV_ITEMS.map((item) => {
         const isActive = isActiveRoute(pathname, item.href);
         const classes = isActive
-          ? "rounded-xl bg-rose-200/70 px-3 py-1.5 text-sm font-medium text-rose-900"
-          : "rounded-xl px-3 py-1.5 text-sm font-medium text-rose-800 hover:bg-rose-200/50";
+          ? "rounded-2xl border border-rose-300/80 bg-gradient-to-br from-rose-200 to-pink-200 px-3.5 py-1.5 text-sm font-semibold text-rose-950 shadow-[0_10px_20px_-14px_rgba(190,24,93,0.8)]"
+          : "rounded-2xl border border-transparent px-3.5 py-1.5 text-sm font-semibold text-rose-800/90 transition hover:border-rose-200 hover:bg-rose-100/70";
 
         return (
           <Link key={item.href} href={item.href} className={classes} aria-current={isActive ? "page" : undefined}>

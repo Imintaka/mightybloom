@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { formatDateKey } from "@/lib/dates";
-import { getCompletedTrackersCount, getDayProgress } from "@/lib/dayProgress";
-import { loadAppState, saveAppState } from "@/lib/storage";
-import { getStickerById, getStickerByTrackers } from "@/lib/stickers";
-import type { AppState, DayMetrics } from "@/types/app.types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
+import { formatDateKey } from "@/lib/dates";
+import { getCompletedTrackersCount, getDayProgress } from "@/lib/dayProgress";
+import { loadAppState, saveAppState } from "@/lib/storage";
+import { getStickerById, getStickerByTrackers } from "@/lib/stickers";
+import type { AppState, Chore, DayMetrics } from "@/types/app.types";
 
 const WEEKDAY_LABELS = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
 
@@ -27,21 +27,34 @@ function parseNumericInput(rawValue: string): number | undefined {
   return Math.round(parsed);
 }
 
-function getTodayChoreIds(state: AppState, date: Date, dateKey: string): string[] {
-  const dayIndex = date.getDay();
-  const completedToday = new Set(state.choreLogByDate[dateKey] ?? []);
+function createChoreId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
 
-  return state.chores
+  return `chore-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getTodayChoreIds(chores: AppState["chores"], choreLogByDate: AppState["choreLogByDate"], date: Date, dateKey: string): string[] {
+  const dayIndex = date.getDay();
+  const completedToday = new Set(choreLogByDate[dateKey] ?? []);
+  const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const mondayOffset = (normalized.getDay() + 6) % 7;
+  normalized.setDate(normalized.getDate() - mondayOffset);
+  const currentWeekStartKey = formatDateKey(normalized);
+
+  return chores
     .filter((chore) => {
       if (!chore.isActive) {
         return false;
       }
 
       if (chore.schedule.type === "weekly") {
-        return chore.schedule.weekdays.includes(dayIndex) || completedToday.has(chore.id);
+        const isScheduledWeek = !chore.startsOn || chore.startsOn === currentWeekStartKey;
+        return (isScheduledWeek && chore.schedule.weekdays.includes(dayIndex)) || completedToday.has(chore.id);
       }
 
-      return completedToday.has(chore.id);
+      return true;
     })
     .map((chore) => chore.id);
 }
@@ -50,6 +63,7 @@ export function TodayScreen() {
   const [today] = useState(() => new Date());
   const todayKey = useMemo(() => formatDateKey(today), [today]);
   const [waterToAdd, setWaterToAdd] = useState("");
+  const [todayChoreInput, setTodayChoreInput] = useState("");
 
   const [appState, setAppState] = useState<AppState>(() => {
     const initial = loadAppState();
@@ -81,9 +95,11 @@ export function TodayScreen() {
   const dayProgress = getDayProgress(dayMetrics, appState);
 
   const todaySticker = appState.stickersByDate[todayKey];
-
   const stickerConfig = getStickerById(todaySticker);
-  const choresForToday = useMemo(() => getTodayChoreIds(appState, today, todayKey), [appState, today, todayKey]);
+  const choresForToday = useMemo(
+    () => getTodayChoreIds(appState.chores, appState.choreLogByDate, today, todayKey),
+    [appState.chores, appState.choreLogByDate, today, todayKey],
+  );
   const choreById = useMemo(() => new Map(appState.chores.map((chore) => [chore.id, chore])), [appState.chores]);
   const completedChoresSet = useMemo(() => new Set(completedChores), [completedChores]);
   const completedChoresForTodayCount = useMemo(
@@ -154,30 +170,52 @@ export function TodayScreen() {
     });
   };
 
+  const addTodayChore = () => {
+    const normalizedTitle = todayChoreInput.trim();
+    if (!normalizedTitle) {
+      return;
+    }
+
+    const nextChore: Chore = {
+      id: createChoreId(),
+      title: normalizedTitle,
+      schedule: { type: "none" },
+      isActive: true,
+    };
+
+    setAppState((prev) => ({
+      ...prev,
+      chores: [...prev.chores, nextChore],
+    }));
+    setTodayChoreInput("");
+  };
+
   return (
-    <Container className="space-y-4 pb-10">
-      <Card className="bg-gradient-to-br from-rose-100/90 via-pink-50/90 to-white">
-        <div className="flex items-start justify-between gap-3">
+    <Container className="space-y-5 pb-12">
+      <Card className="paper-grid relative overflow-hidden bg-gradient-to-br from-rose-100/80 via-pink-50/90 to-white">
+        <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-rose-200/55 blur-2xl" />
+        <div className="pointer-events-none absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-pink-200/40 blur-2xl" />
+        <div className="relative flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-rose-900">Сегодня</h1>
-            <p className="mt-1 text-sm text-rose-800/80">
+            <h1 className="text-2xl font-bold tracking-tight text-rose-950 sm:text-[1.75rem]">Сегодня</h1>
+            <p className="mt-1 text-sm font-medium text-rose-800/85">
               {weekdayLabel} · {todayKey}
             </p>
           </div>
           {stickerConfig ? (
-            <div className="overflow-hidden rounded-2xl border border-rose-200 bg-white/80">
-              <Image src={stickerConfig.imageSrc} alt={stickerConfig.alt} width={48} height={48} className="h-12 w-12 object-cover" />
+            <div className="soft-float overflow-hidden rounded-2xl border border-rose-200/70 bg-white/85 shadow-sm">
+              <Image src={stickerConfig.imageSrc} alt={stickerConfig.alt} width={52} height={52} className="h-[52px] w-[52px] object-cover" />
             </div>
           ) : null}
         </div>
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-rose-900">Метрики дня</h2>
+        <h2 className="text-lg font-semibold text-rose-950">Метрики дня</h2>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="space-y-2 rounded-2xl border border-rose-200 bg-rose-50/60 p-3">
-            <p className="text-sm text-rose-800">Вода за день: {dayMetrics.waterMl ?? 0} мл</p>
-            <div className="flex items-center gap-2">
+          <div className="rounded-2xl border border-rose-200/80 bg-rose-50/70 p-3.5">
+            <p className="text-sm font-medium text-rose-800">Вода за день: {dayMetrics.waterMl ?? 0} мл</p>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 type="number"
                 min={0}
@@ -191,43 +229,45 @@ export function TodayScreen() {
                   }
                 }}
               />
-              <Button className="h-10 px-4" onClick={addWaterIntake}>
+              <Button className="h-11 min-w-28 px-4" onClick={addWaterIntake}>
                 Добавить
               </Button>
             </div>
           </div>
 
-          <label className="space-y-1">
-            <span className="text-sm text-rose-800">Сон (часы)</span>
+          <label className="rounded-2xl border border-rose-200/80 bg-white/70 p-3.5">
+            <span className="text-sm font-medium text-rose-800">Сон (часы)</span>
             <Input
               type="number"
               min={0}
               placeholder="0"
               value={dayMetrics.sleepHours ?? ""}
               onChange={(event) => updateTodayMetrics({ sleepHours: parseNumericInput(event.target.value) })}
+              className="mt-2"
             />
           </label>
 
-          <label className="space-y-1">
-            <span className="text-sm text-rose-800">Шаги</span>
+          <label className="rounded-2xl border border-rose-200/80 bg-white/70 p-3.5">
+            <span className="text-sm font-medium text-rose-800">Шаги</span>
             <Input
               type="number"
               min={0}
               placeholder="0"
               value={dayMetrics.steps ?? ""}
               onChange={(event) => updateTodayMetrics({ steps: parseNumericInput(event.target.value) })}
+              className="mt-2"
             />
           </label>
 
-          <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-3">
-            <p className="text-sm text-rose-800">Тренировка</p>
+          <div className="rounded-2xl border border-rose-200/80 bg-rose-50/70 p-3.5">
+            <p className="text-sm font-medium text-rose-800">Тренировка</p>
             <div className="mt-2 flex items-center gap-2">
               <Button
                 variant={dayMetrics.workoutDone ? "primary" : "secondary"}
                 className="w-full"
                 onClick={() => updateTodayMetrics({ workoutDone: !dayMetrics.workoutDone })}
               >
-                {dayMetrics.workoutDone ? "Done" : "Not done"}
+                {dayMetrics.workoutDone ? "Сделано" : "Не отмечено"}
               </Button>
             </div>
           </div>
@@ -235,41 +275,70 @@ export function TodayScreen() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-rose-900">Прогресс дня</h2>
+        <h2 className="text-lg font-semibold text-rose-950">Прогресс дня</h2>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-          <div className={`rounded-2xl px-3 py-2 ${dayProgress.waterClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div
+            className={`rounded-2xl px-3 py-2 font-medium ${
+              dayProgress.waterClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+            }`}
+          >
             Вода
           </div>
-          <div className={`rounded-2xl px-3 py-2 ${dayProgress.sleepClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div
+            className={`rounded-2xl px-3 py-2 font-medium ${
+              dayProgress.sleepClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+            }`}
+          >
             Сон
           </div>
-          <div className={`rounded-2xl px-3 py-2 ${dayProgress.stepsClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div
+            className={`rounded-2xl px-3 py-2 font-medium ${
+              dayProgress.stepsClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+            }`}
+          >
             Шаги
           </div>
-          <div className={`rounded-2xl px-3 py-2 ${dayProgress.workoutClosed ? "bg-rose-200 text-rose-900" : "bg-rose-50 text-rose-700"}`}>
+          <div
+            className={`rounded-2xl px-3 py-2 font-medium ${
+              dayProgress.workoutClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+            }`}
+          >
             Тренировка
           </div>
         </div>
         <p className="mt-3 text-sm text-rose-800">
-          Закрыто разделов: <span className="font-semibold text-rose-900">{dayProgress.closedCount}/4</span>. Статус дня:{" "}
-          <span className="font-semibold text-rose-900">{dayProgress.dayClosed ? "день закрыт" : "в процессе"}</span>.
+          Закрыто разделов: <span className="font-semibold text-rose-950">{dayProgress.closedCount}/4</span>. Статус дня:{" "}
+          <span className="font-semibold text-rose-950">{dayProgress.dayClosed ? "день закрыт" : "в процессе"}</span>.
         </p>
         {dayProgress.dayClosed ? (
-          <p className="mt-2 rounded-2xl bg-rose-100 px-3 py-2 text-sm text-rose-900">
+          <p className="mt-2 rounded-2xl bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900">
             {stickerConfig?.phrase ?? getStickerByTrackers(dayProgress.closedCount).phrase}
           </p>
         ) : (
-          <p className="mt-2 text-sm text-rose-700">Чтобы закрыть день, нужно выполнить минимум 2 из 3: вода, сон, шаги.</p>
+          <p className="mt-2 text-sm text-rose-700">Чтобы закрыть день, нужно выполнить минимум 2 раздела.</p>
         )}
       </Card>
 
       <Card>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-rose-900">Дела на сегодня</h2>
-          <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-800">
+          <h2 className="text-lg font-semibold text-rose-950">Дела на сегодня</h2>
+          <span className="rounded-full border border-rose-200 bg-rose-100/80 px-2.5 py-1 text-xs font-semibold text-rose-800">
             {completedChoresForTodayCount}/{choresForToday.length || 0}
           </span>
         </div>
+
+        <form
+          className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center"
+          onSubmit={(event) => {
+            event.preventDefault();
+            addTodayChore();
+          }}
+        >
+          <Input placeholder="Новое дело на сегодня" value={todayChoreInput} onChange={(event) => setTodayChoreInput(event.target.value)} />
+          <Button type="submit" className="h-11 min-w-28 px-4">
+            Добавить
+          </Button>
+        </form>
 
         {choresForToday.length > 0 ? (
           <ul className="mt-3 space-y-2">
@@ -283,12 +352,14 @@ export function TodayScreen() {
               return (
                 <li
                   key={chore.id}
-                  className="flex items-center justify-between gap-2 rounded-2xl border border-rose-200 bg-white/70 px-3 py-2"
+                  className="rounded-2xl border border-rose-200/80 bg-white/75 px-3 py-2.5 shadow-[0_10px_20px_-16px_rgba(190,24,93,0.45)]"
                 >
-                  <p className={`text-sm ${done ? "text-rose-500 line-through" : "text-rose-900"}`}>{chore.title}</p>
-                  <Button variant={done ? "primary" : "secondary"} className="h-9 px-3" onClick={() => toggleChoreDone(chore.id)}>
-                    {done ? "Сделано" : "Отметить"}
-                  </Button>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`text-sm font-medium ${done ? "text-rose-500 line-through" : "text-rose-950"}`}>{chore.title}</p>
+                    <Button variant={done ? "primary" : "secondary"} className="h-9 px-3" onClick={() => toggleChoreDone(chore.id)}>
+                      {done ? "Сделано" : "Отметить"}
+                    </Button>
+                  </div>
                 </li>
               );
             })}

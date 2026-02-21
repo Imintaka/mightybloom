@@ -173,17 +173,18 @@ export function NutritionScreen() {
   };
 
   return (
-    <Container className="space-y-4 pb-10">
-      <Card className="bg-gradient-to-br from-rose-100/90 via-pink-50/90 to-white">
-        <h1 className="text-2xl font-semibold text-rose-900">Питание</h1>
-        <p className="mt-2 text-sm text-rose-800/80">
+    <Container className="space-y-5 pb-12">
+      <Card className="paper-grid relative overflow-hidden bg-gradient-to-br from-rose-100/80 via-pink-50/90 to-white">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-pink-200/60 blur-2xl" />
+        <h1 className="text-2xl font-bold tracking-tight text-rose-950 sm:text-[1.75rem]">Питание</h1>
+        <p className="mt-2 text-sm font-medium text-rose-800/85">
           Добавляй еду, отмечай по дням недели и следи, сколько раз за неделю ты ее ела.
         </p>
       </Card>
 
       <Card>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-rose-900">Матрица недели</h2>
+          <h2 className="text-lg font-semibold text-rose-950">Матрица недели</h2>
           <Input
             type="date"
             value={selectedDate}
@@ -191,7 +192,7 @@ export function NutritionScreen() {
             className="max-w-44"
           />
         </div>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_70px_auto]">
+        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-[1fr_70px_auto]">
           <Input placeholder="Название еды" value={titleInput} onChange={(event) => setTitleInput(event.target.value)} />
           <Input
             type="color"
@@ -210,18 +211,18 @@ export function NutritionScreen() {
         <p className="mt-3 text-sm text-rose-700">Столбцы: дни недели. В строке видно, сколько раз еда была отмечена за неделю.</p>
 
         {appState.foodItems.length > 0 ? (
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-rose-100/85 bg-rose-50/35 p-2">
             <table className="min-w-[720px] w-full border-separate border-spacing-2 text-sm">
               <thead>
                 <tr>
-                  <th className="rounded-2xl bg-rose-100 px-3 py-2 text-left font-semibold text-rose-900">Еда</th>
+                  <th className="rounded-2xl border border-rose-200/80 bg-rose-100/80 px-3 py-2 text-left font-semibold text-rose-900">Еда</th>
                   {weekDates.map((day, index) => {
                     const isSelected = day.key === selectedDate;
                     return (
                       <th
                         key={day.key}
-                        className={`rounded-2xl px-3 py-2 text-center font-semibold ${
-                          isSelected ? "bg-rose-300 text-rose-900" : "bg-rose-100 text-rose-800"
+                        className={`rounded-2xl border border-rose-200/80 px-3 py-2 text-center font-semibold ${
+                          isSelected ? "bg-rose-300/90 text-rose-950" : "bg-rose-100/80 text-rose-800"
                         }`}
                       >
                         <button type="button" onClick={() => setSelectedDate(day.key)} className="w-full cursor-pointer">
@@ -236,7 +237,7 @@ export function NutritionScreen() {
               <tbody>
                 {appState.foodItems.map((foodItem) => (
                   <tr key={foodItem.id}>
-                    <td className="rounded-2xl border border-rose-200 bg-white/80 px-3 py-2 text-rose-900">
+                    <td className="rounded-2xl border border-rose-200/85 bg-white/82 px-3 py-2 text-rose-900">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -264,11 +265,14 @@ export function NutritionScreen() {
                       const isSelected = day.key === selectedDate;
 
                       return (
-                        <td key={`${foodItem.id}-${day.key}`} className="rounded-2xl border border-rose-200 bg-white/80 px-2 py-2 text-center">
+                        <td
+                          key={`${foodItem.id}-${day.key}`}
+                          className="rounded-2xl border border-rose-200/85 bg-white/82 px-2 py-2 text-center"
+                        >
                           <button
                             type="button"
                             onClick={() => toggleFoodMark(day.key, foodItem.id)}
-                            className={`h-9 w-9 rounded-xl border text-sm font-semibold transition-colors ${
+                            className={`h-9 w-9 rounded-xl border text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${
                               isMarked
                                 ? "border-rose-500 bg-rose-500 text-white"
                                 : isSelected

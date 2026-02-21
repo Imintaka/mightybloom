@@ -14,8 +14,8 @@ type RootLayoutProps = Readonly<{
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ru">
-      <body className="min-h-screen bg-gradient-to-b from-rose-100 via-pink-50 to-white text-rose-900 antialiased">
-        <header className="sticky top-0 z-10 border-b border-rose-200/70 bg-rose-50/90 backdrop-blur">
+      <body className="min-h-screen text-rose-900 antialiased">
+        <header className="sticky top-0 z-20 border-b border-rose-200/60 bg-white/70 backdrop-blur-md">
           <MainNav />
         </header>
         {children}

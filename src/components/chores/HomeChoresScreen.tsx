@@ -35,10 +35,19 @@ function createChoreId(): string {
   return `chore-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function getWeekDates(referenceDate: Date): WeekDate[] {
+function getWeekStartDate(referenceDate: Date): Date {
   const normalized = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
   const mondayOffset = (normalized.getDay() + 6) % 7;
   normalized.setDate(normalized.getDate() - mondayOffset);
+  return normalized;
+}
+
+function getWeekStartKey(referenceDate: Date): string {
+  return formatDateKey(getWeekStartDate(referenceDate));
+}
+
+function getWeekDates(referenceDate: Date): WeekDate[] {
+  const normalized = getWeekStartDate(referenceDate);
 
   return Array.from({ length: 7 }, (_, dayOffset) => {
     const date = new Date(normalized);
@@ -50,6 +59,16 @@ function getWeekDates(referenceDate: Date): WeekDate[] {
       jsDayIndex: WEEKDAY_TO_JS_DAY[dayOffset],
     };
   });
+}
+
+function shiftDateKeyByDays(dateKey: string, days: number): string {
+  const parsed = new Date(`${dateKey}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return formatDateKey(new Date());
+  }
+
+  parsed.setDate(parsed.getDate() + days);
+  return formatDateKey(parsed);
 }
 
 function toSchedule(weekdays: number[]): Chore["schedule"] {
@@ -70,17 +89,40 @@ function removeChoreFromLog(choreLogByDate: AppState["choreLogByDate"], choreId:
   return Object.fromEntries(nextEntries);
 }
 
+function isChorePlannedForDate(chore: Chore, dateKey: string, jsDayIndex: number): boolean {
+  if (chore.schedule.type !== "weekly") {
+    return false;
+  }
+
+  if (!chore.schedule.weekdays.includes(jsDayIndex)) {
+    return false;
+  }
+
+  if (!chore.startsOn) {
+    return true;
+  }
+
+  const parsed = new Date(`${dateKey}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+
+  return getWeekStartKey(parsed) === chore.startsOn;
+}
+
 function getScheduleText(schedule: Chore["schedule"]): string {
   if (schedule.type === "none") {
     return "Без расписания";
   }
 
-  return schedule.weekdays
+  const weekdaysText = schedule.weekdays
     .map((weekday) => {
       const mondayIndex = WEEKDAY_TO_JS_DAY.indexOf(weekday);
       return WEEKDAY_LONG_LABELS[mondayIndex];
     })
     .join(", ");
+
+  return weekdaysText;
 }
 
 export function HomeChoresScreen() {
@@ -107,16 +149,42 @@ export function HomeChoresScreen() {
   }, [selectedDate]);
 
   const weekDates = useMemo(() => getWeekDates(selectedDateObj), [selectedDateObj]);
+  const selectedWeekStartKey = useMemo(() => getWeekStartKey(selectedDateObj), [selectedDateObj]);
+  const selectedWeekLabel = useMemo(() => {
+    const start = weekDates[0];
+    const end = weekDates[6];
+    if (!start || !end) {
+      return "";
+    }
+
+    return `${start.key} - ${end.key}`;
+  }, [weekDates]);
 
   const completedChoreSetByDate = useMemo(
     () => new Map(Object.entries(appState.choreLogByDate).map(([dateKey, choreIds]) => [dateKey, new Set(choreIds)])),
     [appState.choreLogByDate],
   );
 
+  const choresForSelectedWeek = useMemo(
+    () =>
+      chores.filter((chore) => {
+        if (chore.schedule.type !== "weekly") {
+          return true;
+        }
+
+        if (!chore.startsOn) {
+          return true;
+        }
+
+        return chore.startsOn === selectedWeekStartKey;
+      }),
+    [chores, selectedWeekStartKey],
+  );
+
   const doneCountForSelectedDay = useMemo(() => {
     const doneSet = completedChoreSetByDate.get(selectedDate) ?? new Set<string>();
-    return chores.filter((chore) => doneSet.has(chore.id)).length;
-  }, [chores, completedChoreSetByDate, selectedDate]);
+    return choresForSelectedWeek.filter((chore) => doneSet.has(chore.id)).length;
+  }, [choresForSelectedWeek, completedChoreSetByDate, selectedDate]);
 
   const resetForm = () => {
     setTitleInput("");
@@ -137,6 +205,7 @@ export function HomeChoresScreen() {
     }
 
     const nextSchedule = toSchedule(scheduleDaysInput);
+    const startsOn = nextSchedule.type === "weekly" ? selectedWeekStartKey : undefined;
 
     if (editingChoreId) {
       setAppState((prev) => ({
@@ -147,6 +216,7 @@ export function HomeChoresScreen() {
                 ...chore,
                 title: normalizedTitle,
                 schedule: nextSchedule,
+                startsOn,
               }
             : chore,
         ),
@@ -159,6 +229,7 @@ export function HomeChoresScreen() {
       id: createChoreId(),
       title: normalizedTitle,
       schedule: nextSchedule,
+      startsOn,
       isActive: true,
     };
 
@@ -173,6 +244,9 @@ export function HomeChoresScreen() {
     setEditingChoreId(chore.id);
     setTitleInput(chore.title);
     setScheduleDaysInput(chore.schedule.type === "weekly" ? chore.schedule.weekdays : []);
+    if (chore.startsOn) {
+      setSelectedDate(chore.startsOn);
+    }
   };
 
   const deleteChore = (choreId: string) => {
@@ -187,7 +261,11 @@ export function HomeChoresScreen() {
     }
   };
 
-  const toggleChoreMark = (dateKey: string, choreId: string) => {
+  const toggleChoreMark = (dateKey: string, choreId: string, canToggle: boolean) => {
+    if (!canToggle) {
+      return;
+    }
+
     setAppState((prev) => {
       const current = new Set(prev.choreLogByDate[dateKey] ?? []);
 
@@ -208,15 +286,31 @@ export function HomeChoresScreen() {
   };
 
   return (
-    <Container className="space-y-4 pb-10">
-      <Card className="bg-gradient-to-br from-rose-100/90 via-pink-50/90 to-white">
-        <h1 className="text-2xl font-semibold text-rose-900">Дом</h1>
-        <p className="mt-2 text-sm text-rose-800/80">
+    <Container className="space-y-5 pb-12">
+      <Card className="paper-grid relative overflow-hidden bg-gradient-to-br from-rose-100/80 via-pink-50/90 to-white">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-rose-200/60 blur-2xl" />
+        <h1 className="text-2xl font-bold tracking-tight text-rose-950 sm:text-[1.75rem]">Дом</h1>
+        <p className="mt-2 text-sm font-medium text-rose-800/85">
           Всё управление задачами в одной форме: дата недели, создание и редактирование расписания.
         </p>
       </Card>
 
       <Card>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-rose-900">Неделя: {selectedWeekLabel}</p>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setSelectedDate((prev) => shiftDateKeyByDays(prev, -7))}>
+              Пред.
+            </Button>
+            <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setSelectedDate(formatDateKey(new Date()))}>
+              Текущая
+            </Button>
+            <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setSelectedDate((prev) => shiftDateKeyByDays(prev, 7))}>
+              След.
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr_auto] sm:items-end">
           <label className="space-y-1">
             <span className="text-sm text-rose-800">Дата недели</span>
@@ -249,10 +343,10 @@ export function HomeChoresScreen() {
                   key={label}
                   type="button"
                   onClick={() => toggleScheduleDayInput(jsDay)}
-                  className={`rounded-xl border px-3 py-2 text-sm transition-colors ${
+                  className={`rounded-xl border px-3 py-2 text-sm font-semibold transition duration-200 ${
                     selected
                       ? "border-rose-500 bg-rose-500 text-white"
-                      : "border-rose-200 bg-white text-rose-800 hover:bg-rose-100"
+                      : "border-rose-200 bg-white/90 text-rose-800 hover:bg-rose-100"
                   }`}
                 >
                   {label}
@@ -267,7 +361,7 @@ export function HomeChoresScreen() {
             Выполнено за выбранный день: <span className="font-semibold text-rose-900">{doneCountForSelectedDay}</span>
           </span>
           <span>из</span>
-          <span className="font-semibold text-rose-900">{chores.length}</span>
+          <span className="font-semibold text-rose-900">{choresForSelectedWeek.length}</span>
         </div>
 
         {editingChoreId ? (
@@ -278,22 +372,24 @@ export function HomeChoresScreen() {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-rose-900">Weekly-матрица выполнения</h2>
+        <h2 className="text-lg font-semibold text-rose-950">Weekly-матрица выполнения</h2>
         <p className="mt-1 text-sm text-rose-700">Редактирование и удаление задач находятся в первой колонке таблицы.</p>
 
-        {chores.length > 0 ? (
-          <div className="mt-4 overflow-x-auto">
+        {choresForSelectedWeek.length > 0 ? (
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-rose-100/85 bg-rose-50/35 p-2">
             <table className="min-w-[760px] w-full border-separate border-spacing-2 text-sm">
               <thead>
                 <tr>
-                  <th className="rounded-2xl bg-rose-100 px-3 py-2 text-left font-semibold text-rose-900">Задача</th>
+                  <th className="rounded-2xl border border-rose-200/80 bg-rose-100/80 px-3 py-2 text-left font-semibold text-rose-900">
+                    Задача
+                  </th>
                   {weekDates.map((day, index) => {
                     const isSelected = day.key === selectedDate;
                     return (
                       <th
                         key={day.key}
-                        className={`rounded-2xl px-3 py-2 text-center font-semibold ${
-                          isSelected ? "bg-rose-300 text-rose-900" : "bg-rose-100 text-rose-800"
+                        className={`rounded-2xl border border-rose-200/80 px-3 py-2 text-center font-semibold ${
+                          isSelected ? "bg-rose-300/90 text-rose-950" : "bg-rose-100/80 text-rose-800"
                         }`}
                       >
                         <button type="button" onClick={() => setSelectedDate(day.key)} className="w-full cursor-pointer">
@@ -306,9 +402,9 @@ export function HomeChoresScreen() {
                 </tr>
               </thead>
               <tbody>
-                {chores.map((chore) => (
+                {choresForSelectedWeek.map((chore) => (
                   <tr key={chore.id}>
-                    <td className="rounded-2xl border border-rose-200 bg-white/80 px-3 py-2 text-rose-900 align-top">
+                    <td className="rounded-2xl border border-rose-200/85 bg-white/82 px-3 py-2 text-rose-900 align-top">
                       <p className="truncate font-medium">{chore.title}</p>
                       <p className="mt-1 text-xs text-rose-600">{getScheduleText(chore.schedule)}</p>
                       <div className="mt-2 flex items-center gap-1">
@@ -324,15 +420,20 @@ export function HomeChoresScreen() {
                     {weekDates.map((day) => {
                       const marked = completedChoreSetByDate.get(day.key)?.has(chore.id) ?? false;
                       const isSelected = day.key === selectedDate;
-                      const plannedBySchedule =
-                        chore.schedule.type === "weekly" && chore.schedule.weekdays.includes(day.jsDayIndex);
+                      const plannedBySchedule = isChorePlannedForDate(chore, day.key, day.jsDayIndex);
+                      const canToggle =
+                        chore.schedule.type === "none" || marked || plannedBySchedule;
 
                       return (
-                        <td key={`${chore.id}-${day.key}`} className="rounded-2xl border border-rose-200 bg-white/80 px-2 py-2 text-center">
+                        <td
+                          key={`${chore.id}-${day.key}`}
+                          className="rounded-2xl border border-rose-200/85 bg-white/82 px-2 py-2 text-center"
+                        >
                           <button
                             type="button"
-                            onClick={() => toggleChoreMark(day.key, chore.id)}
-                            className={`h-9 w-9 rounded-xl border text-sm font-semibold transition-colors ${
+                            onClick={() => toggleChoreMark(day.key, chore.id, canToggle)}
+                            disabled={!canToggle}
+                            className={`h-9 w-9 rounded-xl border text-sm font-semibold transition duration-200 ${
                               marked
                                 ? "border-rose-500 bg-rose-500 text-white"
                                 : plannedBySchedule
@@ -340,7 +441,7 @@ export function HomeChoresScreen() {
                                   : isSelected
                                     ? "border-rose-300 bg-rose-50 text-rose-700"
                                     : "border-rose-200 bg-white text-rose-500"
-                            }`}
+                            } ${canToggle ? "hover:-translate-y-0.5" : "cursor-not-allowed opacity-60"}`}
                             aria-label={`${chore.title}: ${day.key}`}
                           >
                             {marked ? "✓" : plannedBySchedule ? "○" : "·"}
