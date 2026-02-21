@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
-import { formatDateKey } from "@/lib/dates";
+import { formatDateKey, getWeekDates, shiftDateKeyByDays } from "@/lib/dates";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import type { AppState, WorkoutType } from "@/types/app.types";
 
@@ -21,37 +21,6 @@ const WORKOUT_TYPES: Array<{
   { value: "cardio", label: "Кардио" },
   { value: "rest", label: "Отдых" },
 ];
-
-type WeekDate = {
-  key: string;
-  dayOfMonth: number;
-};
-
-function getWeekDates(referenceDate: Date): WeekDate[] {
-  const normalized = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-  const mondayOffset = (normalized.getDay() + 6) % 7;
-  normalized.setDate(normalized.getDate() - mondayOffset);
-
-  return Array.from({ length: 7 }, (_, dayOffset) => {
-    const weekDate = new Date(normalized);
-    weekDate.setDate(normalized.getDate() + dayOffset);
-
-    return {
-      key: formatDateKey(weekDate),
-      dayOfMonth: weekDate.getDate(),
-    };
-  });
-}
-
-function shiftDateKeyByDays(dateKey: string, days: number): string {
-  const parsed = new Date(`${dateKey}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) {
-    return formatDateKey(new Date());
-  }
-
-  parsed.setDate(parsed.getDate() + days);
-  return formatDateKey(parsed);
-}
 
 function getWorkoutLabelByType(type: WorkoutType | undefined): string {
   if (!type) {

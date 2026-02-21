@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
-import { formatDateKey } from "@/lib/dates";
+import { formatDateKey, getWeekDates, getWeekStartKey, shiftDateKeyByDays } from "@/lib/dates";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import type { AppState, Chore } from "@/types/app.types";
 
@@ -19,13 +19,7 @@ const WEEKDAY_LONG_LABELS = [
   "Суббота",
   "Воскресенье",
 ];
-const WEEKDAY_TO_JS_DAY = [1, 2, 3, 4, 5, 6, 0];
-
-type WeekDate = {
-  key: string;
-  dayOfMonth: number;
-  jsDayIndex: number;
-};
+const WEEKDAY_TO_JS_DAY_BY_INDEX = [1, 2, 3, 4, 5, 6, 0];
 
 function createChoreId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -33,42 +27,6 @@ function createChoreId(): string {
   }
 
   return `chore-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function getWeekStartDate(referenceDate: Date): Date {
-  const normalized = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-  const mondayOffset = (normalized.getDay() + 6) % 7;
-  normalized.setDate(normalized.getDate() - mondayOffset);
-  return normalized;
-}
-
-function getWeekStartKey(referenceDate: Date): string {
-  return formatDateKey(getWeekStartDate(referenceDate));
-}
-
-function getWeekDates(referenceDate: Date): WeekDate[] {
-  const normalized = getWeekStartDate(referenceDate);
-
-  return Array.from({ length: 7 }, (_, dayOffset) => {
-    const date = new Date(normalized);
-    date.setDate(normalized.getDate() + dayOffset);
-
-    return {
-      key: formatDateKey(date),
-      dayOfMonth: date.getDate(),
-      jsDayIndex: WEEKDAY_TO_JS_DAY[dayOffset],
-    };
-  });
-}
-
-function shiftDateKeyByDays(dateKey: string, days: number): string {
-  const parsed = new Date(`${dateKey}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) {
-    return formatDateKey(new Date());
-  }
-
-  parsed.setDate(parsed.getDate() + days);
-  return formatDateKey(parsed);
 }
 
 function toSchedule(weekdays: number[]): Chore["schedule"] {
@@ -117,7 +75,7 @@ function getScheduleText(schedule: Chore["schedule"]): string {
 
   const weekdaysText = schedule.weekdays
     .map((weekday) => {
-      const mondayIndex = WEEKDAY_TO_JS_DAY.indexOf(weekday);
+      const mondayIndex = WEEKDAY_TO_JS_DAY_BY_INDEX.indexOf(weekday);
       return WEEKDAY_LONG_LABELS[mondayIndex];
     })
     .join(", ");
@@ -337,7 +295,7 @@ export function HomeChoresScreen() {
           <p className="text-sm text-rose-700">Дни недели для задачи</p>
           <div className="flex flex-wrap gap-2">
             {WEEKDAY_SHORT_LABELS.map((label, index) => {
-              const jsDay = WEEKDAY_TO_JS_DAY[index];
+              const jsDay = WEEKDAY_TO_JS_DAY_BY_INDEX[index];
               const selected = scheduleDaysInput.includes(jsDay);
 
               return (

@@ -268,12 +268,25 @@ export function TodayScreen() {
       <Card className="paper-grid relative overflow-hidden border border-rose-200/80 bg-gradient-to-br from-rose-100/80 via-pink-50/90 to-white">
         <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-rose-200/55 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-pink-200/40 blur-2xl" />
-        <div className="relative flex items-start justify-between gap-3">
-          <div>
+        <div className="relative flex flex-wrap items-center justify-center gap-3 text-center sm:flex-nowrap sm:justify-between sm:text-left">
+          <div className="sm:min-w-44">
             <h1 className="text-2xl font-bold tracking-tight text-rose-950 sm:text-[1.75rem]">Сегодня</h1>
             <p className="mt-1 text-sm font-medium text-rose-800/85">
               {weekdayLabel} · {todayKey}
             </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/80 bg-white/85 px-3 py-1.5 shadow-sm">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-rose-700">Стрик</span>
+              <span className="text-sm font-semibold text-rose-950">{appState.streaks.currentDays} дн.</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/80 bg-white/85 px-3 py-1.5 shadow-sm">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-rose-700">Лучший</span>
+              <span className="text-sm font-semibold text-rose-950">{appState.streaks.bestDays} дн.</span>
+            </div>
+            <span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${STREAK_BADGE_CLASSES[streakBadge.id]}`}>
+              {streakBadge.title}
+            </span>
           </div>
           {stickerConfig ? (
             <div className="soft-float overflow-hidden rounded-2xl border border-rose-200/70 bg-white/85 shadow-sm">
@@ -412,33 +425,13 @@ export function TodayScreen() {
 
       <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 
-      <Card>
-        <h2 className="text-lg font-semibold text-rose-950">Стрики и бейдж</h2>
-        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-          <div className="rounded-2xl border border-rose-200/85 bg-white/80 px-3 py-2">
-            <p className="text-xs text-rose-700">Текущий стрик</p>
-            <p className="text-base font-semibold text-rose-950">{appState.streaks.currentDays} дн.</p>
-          </div>
-          <div className="rounded-2xl border border-rose-200/85 bg-white/80 px-3 py-2">
-            <p className="text-xs text-rose-700">Лучший стрик</p>
-            <p className="text-base font-semibold text-rose-950">{appState.streaks.bestDays} дн.</p>
-          </div>
-          <div className="rounded-2xl border border-rose-200/85 bg-white/80 px-3 py-2">
-            <p className="text-xs text-rose-700">Бейдж уровня</p>
-            <p className="mt-1">
-              <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STREAK_BADGE_CLASSES[streakBadge.id]}`}>
-                {streakBadge.title}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {motivationText ? (
-          <p className="mt-3 rounded-2xl border border-rose-200 bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900" role="status" aria-live="polite">
+      {motivationText ? (
+        <Card>
+          <p className="rounded-2xl border border-rose-200 bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900" role="status" aria-live="polite">
             {motivationText}
           </p>
-        ) : null}
-      </Card>
+        </Card>
+      ) : null}
 
       <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 

@@ -52,3 +52,45 @@ export function getMonthStart(date: Date): Date {
 export function getMonthEnd(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
+
+export type WeekDate = {
+  key: string;
+  dayOfMonth: number;
+  jsDayIndex: number;
+};
+
+export function getWeekStartDate(referenceDate: Date): Date {
+  const normalized = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const mondayOffset = (normalized.getDay() + 6) % 7;
+  normalized.setDate(normalized.getDate() - mondayOffset);
+  return normalized;
+}
+
+export function getWeekStartKey(referenceDate: Date): string {
+  return formatDateKey(getWeekStartDate(referenceDate));
+}
+
+export function getWeekDates(referenceDate: Date): WeekDate[] {
+  const weekStart = getWeekStartDate(referenceDate);
+
+  return Array.from({ length: 7 }, (_, dayOffset) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + dayOffset);
+
+    return {
+      key: formatDateKey(date),
+      dayOfMonth: date.getDate(),
+      jsDayIndex: date.getDay(),
+    };
+  });
+}
+
+export function shiftDateKeyByDays(dateKey: string, days: number): string {
+  const parsed = parseDateKey(dateKey);
+  if (!parsed) {
+    return formatDateKey(new Date());
+  }
+
+  parsed.setDate(parsed.getDate() + days);
+  return formatDateKey(parsed);
+}
