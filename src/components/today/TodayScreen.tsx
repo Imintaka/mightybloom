@@ -93,6 +93,15 @@ export function TodayScreen() {
   const dayMetrics: DayMetrics = appState.metricsByDate[todayKey] ?? {};
   const completedChores = useMemo(() => appState.choreLogByDate[todayKey] ?? [], [appState.choreLogByDate, todayKey]);
   const dayProgress = getDayProgress(dayMetrics, appState);
+  const waterGoalMl = Math.max(appState.goals.waterMl, 1);
+  const waterCurrentMl = dayMetrics.waterMl ?? 0;
+  const waterProgressPercent = Math.min((waterCurrentMl / waterGoalMl) * 100, 100);
+  const sleepGoalHours = Math.max(appState.goals.sleepHours, 1);
+  const sleepCurrentHours = dayMetrics.sleepHours ?? 0;
+  const sleepProgressPercent = Math.min((sleepCurrentHours / sleepGoalHours) * 100, 100);
+  const stepsGoal = Math.max(appState.goals.steps, 1);
+  const stepsCurrent = dayMetrics.steps ?? 0;
+  const stepsProgressPercent = Math.min((stepsCurrent / stepsGoal) * 100, 100);
 
   const todaySticker = appState.stickersByDate[todayKey];
   const stickerConfig = getStickerById(todaySticker);
@@ -204,7 +213,7 @@ export function TodayScreen() {
           </div>
           {stickerConfig ? (
             <div className="soft-float overflow-hidden rounded-2xl border border-rose-200/70 bg-white/85 shadow-sm">
-              <Image src={stickerConfig.imageSrc} alt={stickerConfig.alt} width={52} height={52} className="h-[52px] w-[52px] object-cover" />
+              <Image src={stickerConfig.imageSrc} alt={stickerConfig.alt} width={64} height={64} className="h-[64px] w-[64px] object-cover" />
             </div>
           ) : null}
         </div>
@@ -215,6 +224,19 @@ export function TodayScreen() {
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-rose-200/80 bg-rose-50/70 p-3.5">
             <p className="text-sm font-medium text-rose-800">Вода за день: {dayMetrics.waterMl ?? 0} мл</p>
+            <div className="mt-2 overflow-hidden rounded-full border border-rose-200/85 bg-white/75">
+              <div className="h-3 w-full">
+                <div
+                  className="water-fill relative h-full rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-rose-300 transition-[width] duration-500 ease-out"
+                  style={{ width: `${waterProgressPercent}%` }}
+                >
+                  <div className="water-wave absolute inset-0 opacity-70" />
+                </div>
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-rose-700">
+              Цель: {waterGoalMl} мл. Прогресс {Math.min(waterCurrentMl, waterGoalMl)} / {waterGoalMl}.
+            </p>
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 type="number"
@@ -237,6 +259,20 @@ export function TodayScreen() {
 
           <label className="rounded-2xl border border-rose-200/80 bg-white/70 p-3.5">
             <span className="text-sm font-medium text-rose-800">Сон (часы)</span>
+            <div className="mt-2 overflow-hidden rounded-full border border-zinc-300/80 bg-white/85">
+              <div className="h-3 w-full">
+                <div
+                  className="sleep-fill relative h-full rounded-full bg-gradient-to-r from-zinc-700 via-zinc-900 to-black transition-[width] duration-500 ease-out"
+                  style={{ width: `${sleepProgressPercent}%` }}
+                >
+                  <div className="sleep-stars absolute inset-0" />
+                  <div className="sleep-stars sleep-stars-2 absolute inset-0" />
+                </div>
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-zinc-700/90">
+              Цель: {sleepGoalHours} ч. Прогресс {Math.min(sleepCurrentHours, sleepGoalHours)} / {sleepGoalHours}.
+            </p>
             <Input
               type="number"
               min={0}
@@ -249,6 +285,17 @@ export function TodayScreen() {
 
           <label className="rounded-2xl border border-rose-200/80 bg-white/70 p-3.5">
             <span className="text-sm font-medium text-rose-800">Шаги</span>
+            <div className="mt-2 overflow-hidden rounded-full border border-amber-200/80 bg-white/85">
+              <div className="h-3 w-full">
+                <div
+                  className="steps-fill relative h-full rounded-full bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 transition-[width] duration-500 ease-out"
+                  style={{ width: `${stepsProgressPercent}%` }}
+                >
+                  <div className="steps-tracks absolute inset-0" />
+                </div>
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-amber-800/90">Цель: {stepsGoal}. Прогресс {Math.min(stepsCurrent, stepsGoal)} / {stepsGoal}.</p>
             <Input
               type="number"
               min={0}

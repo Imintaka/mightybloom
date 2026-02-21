@@ -95,6 +95,64 @@ body::after {
   animation: soft-float 6s ease-in-out infinite;
 }
 
+.water-fill {
+  min-width: 0;
+}
+
+.water-wave {
+  background:
+    radial-gradient(14px 7px at 10px 7px, rgba(255, 255, 255, 0.35) 42%, transparent 43%) repeat-x,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+  background-size:
+    28px 100%,
+    100% 100%;
+  animation: water-wave 2.4s linear infinite;
+}
+
+.sleep-fill {
+  min-width: 0;
+}
+
+.sleep-stars {
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8px 7px, rgba(255, 255, 255, 0.95) 1px, transparent 2px) repeat,
+    radial-gradient(circle at 18px 4px, rgba(255, 255, 255, 0.7) 1px, transparent 2px) repeat,
+    radial-gradient(circle at 24px 10px, rgba(255, 255, 255, 0.45) 1px, transparent 2px) repeat;
+  background-size:
+    28px 100%,
+    34px 100%,
+    40px 100%;
+  animation:
+    sleep-stars 5.2s linear infinite,
+    sleep-twinkle 1.8s ease-in-out infinite alternate;
+}
+
+.sleep-stars-2 {
+  opacity: 0.45;
+  filter: blur(0.2px);
+  animation:
+    sleep-stars 8.6s linear infinite reverse,
+    sleep-twinkle 2.4s ease-in-out infinite alternate-reverse;
+}
+
+.steps-fill {
+  min-width: 0;
+}
+
+.steps-tracks {
+  pointer-events: none;
+  background:
+    radial-gradient(5px 3px at 6px 4px, rgba(120, 53, 15, 0.45) 68%, transparent 72%) repeat-x,
+    radial-gradient(5px 3px at 16px 8px, rgba(120, 53, 15, 0.38) 68%, transparent 72%) repeat-x;
+  background-size:
+    24px 100%,
+    28px 100%;
+  animation:
+    steps-walk 1.2s linear infinite,
+    steps-bounce 0.7s ease-in-out infinite alternate;
+}
+
 @keyframes screen-enter {
   from {
     transform: translateY(10px);
@@ -113,5 +171,66 @@ body::after {
   }
   50% {
     transform: translateY(-4px);
+  }
+}
+
+@keyframes water-wave {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      28px 0,
+      0 0;
+  }
+}
+
+@keyframes sleep-stars {
+  from {
+    background-position:
+      0 0,
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      -28px 0,
+      -34px 0,
+      -40px 0;
+  }
+}
+
+@keyframes sleep-twinkle {
+  0% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes steps-walk {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      24px 0,
+      28px 0;
+  }
+}
+
+@keyframes steps-bounce {
+  from {
+    transform: translateY(0);
+    opacity: 0.72;
+  }
+  to {
+    transform: translateY(-0.5px);
+    opacity: 1;
   }
 }
