@@ -8,6 +8,7 @@ import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
 import { getCompletedTrackersCount } from "@/lib/dayProgress";
 import { formatDateKey, getDateKeysOfMonth, getMonthStart } from "@/lib/dates";
+import { recalculateStreaks } from "@/lib/gamification";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import { getStickerById, getStickerByTrackers } from "@/lib/stickers";
 import type { AppState, DayMetrics, MonthTrackerColor } from "@/types/app.types";
@@ -220,19 +221,27 @@ export function MonthScreen() {
         ...(prev.metricsByDate[selectedDateKey] ?? {}),
         ...partial,
       };
+      const nextMetricsByDate = {
+        ...prev.metricsByDate,
+        [selectedDateKey]: nextMetrics,
+      };
       const completedTrackers = getCompletedTrackersCount(nextMetrics, prev);
       const sticker = getStickerByTrackers(completedTrackers);
 
       return {
         ...prev,
-        metricsByDate: {
-          ...prev.metricsByDate,
-          [selectedDateKey]: nextMetrics,
-        },
+        metricsByDate: nextMetricsByDate,
         stickersByDate: {
           ...prev.stickersByDate,
           [selectedDateKey]: sticker.id,
         },
+        streaks: recalculateStreaks(
+          {
+            ...prev,
+            metricsByDate: nextMetricsByDate,
+          },
+          today,
+        ),
       };
     });
   };

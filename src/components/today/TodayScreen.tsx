@@ -8,11 +8,23 @@ import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
 import { formatDateKey } from "@/lib/dates";
 import { getCompletedTrackersCount, getDayProgress } from "@/lib/dayProgress";
+import { getStreakBadge, recalculateStreaks } from "@/lib/gamification";
 import { loadAppState, saveAppState } from "@/lib/storage";
 import { getStickerById, getStickerByTrackers } from "@/lib/stickers";
 import type { AppState, Chore, DayMetrics } from "@/types/app.types";
 
 const WEEKDAY_LABELS = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+const MOTIVATION_PHRASES = {
+  waterClosed: "Вода закрыта. Ты в отличном ритме.",
+  sleepClosed: "Сон закрыт. Тело скажет спасибо.",
+  dayClosed: "День закрыт. Забирай стикер и гордись собой.",
+} as const;
+const STREAK_BADGE_CLASSES: Record<ReturnType<typeof getStreakBadge>["id"], string> = {
+  newbie: "border-rose-200 bg-rose-100 text-rose-900",
+  rhythm: "border-pink-200 bg-pink-100 text-pink-900",
+  stable: "border-amber-200 bg-amber-100 text-amber-900",
+  fire: "border-orange-200 bg-orange-100 text-orange-900",
+};
 
 function parseNumericInput(rawValue: string): number | undefined {
   if (!rawValue.trim()) {
@@ -66,6 +78,7 @@ export function TodayScreen() {
   const [sleepToAdd, setSleepToAdd] = useState("");
   const [stepsToAdd, setStepsToAdd] = useState("");
   const [todayChoreInput, setTodayChoreInput] = useState("");
+  const [motivationText, setMotivationText] = useState<string | null>(null);
 
   const [appState, setAppState] = useState<AppState>(() => {
     const initial = loadAppState();
@@ -117,6 +130,7 @@ export function TodayScreen() {
     () => choresForToday.filter((id) => completedChoresSet.has(id)).length,
     [choresForToday, completedChoresSet],
   );
+  const streakBadge = useMemo(() => getStreakBadge(appState.streaks.currentDays), [appState.streaks.currentDays]);
 
   const withTodayStickerByTrackers = (nextState: AppState): AppState => {
     const metrics = nextState.metricsByDate[todayKey] ?? {};
@@ -137,18 +151,44 @@ export function TodayScreen() {
   };
 
   const updateTodayMetrics = (partial: Partial<DayMetrics>) => {
-    setAppState((prev) =>
-      withTodayStickerByTrackers({
-        ...prev,
-        metricsByDate: {
-          ...prev.metricsByDate,
-          [todayKey]: {
-            ...(prev.metricsByDate[todayKey] ?? {}),
-            ...partial,
-          },
+    let nextMotivationText: string | null = null;
+
+    setAppState((prev) => {
+      const previousMetrics = prev.metricsByDate[todayKey] ?? {};
+      const previousProgress = getDayProgress(previousMetrics, prev);
+      const nextMetricsByDate = {
+        ...prev.metricsByDate,
+        [todayKey]: {
+          ...previousMetrics,
+          ...partial,
         },
-      }),
-    );
+      };
+      const nextStateWithMetrics = withTodayStickerByTrackers({
+        ...prev,
+        metricsByDate: nextMetricsByDate,
+      });
+      const nextMetrics = nextStateWithMetrics.metricsByDate[todayKey] ?? {};
+      const nextProgress = getDayProgress(nextMetrics, nextStateWithMetrics);
+
+      if (!previousProgress.waterClosed && nextProgress.waterClosed) {
+        nextMotivationText = MOTIVATION_PHRASES.waterClosed;
+      }
+      if (!previousProgress.sleepClosed && nextProgress.sleepClosed) {
+        nextMotivationText = MOTIVATION_PHRASES.sleepClosed;
+      }
+      if (!previousProgress.dayClosed && nextProgress.dayClosed) {
+        nextMotivationText = MOTIVATION_PHRASES.dayClosed;
+      }
+
+      return {
+        ...nextStateWithMetrics,
+        streaks: recalculateStreaks(nextStateWithMetrics, today),
+      };
+    });
+
+    if (nextMotivationText) {
+      setMotivationText(nextMotivationText);
+    }
   };
 
   const addWaterIntake = () => {
@@ -365,6 +405,36 @@ export function TodayScreen() {
             </div>
           </div>
         </div>
+      </Card>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
+
+      <Card>
+        <h2 className="text-lg font-semibold text-rose-950">Стрики и бейдж</h2>
+        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <div className="rounded-2xl border border-rose-200/85 bg-white/80 px-3 py-2">
+            <p className="text-xs text-rose-700">Текущий стрик</p>
+            <p className="text-base font-semibold text-rose-950">{appState.streaks.currentDays} дн.</p>
+          </div>
+          <div className="rounded-2xl border border-rose-200/85 bg-white/80 px-3 py-2">
+            <p className="text-xs text-rose-700">Лучший стрик</p>
+            <p className="text-base font-semibold text-rose-950">{appState.streaks.bestDays} дн.</p>
+          </div>
+          <div className="rounded-2xl border border-rose-200/85 bg-white/80 px-3 py-2">
+            <p className="text-xs text-rose-700">Бейдж уровня</p>
+            <p className="mt-1">
+              <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STREAK_BADGE_CLASSES[streakBadge.id]}`}>
+                {streakBadge.title}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {motivationText ? (
+          <p className="mt-3 rounded-2xl border border-rose-200 bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900">
+            {motivationText}
+          </p>
+        ) : null}
       </Card>
 
       <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />

@@ -1,3 +1,4 @@
+import { recalculateStreaks } from "@/lib/gamification";
 import type { AppState } from "@/types/app.types";
 
 export const STORAGE_KEY = "notepad-app-state-v1";
@@ -59,7 +60,7 @@ export function loadAppState(): AppState {
     const restParsed: Partial<AppState> = { ...parsed };
     delete (restParsed as { workDaysByMonth?: unknown }).workDaysByMonth;
 
-    return {
+    const mergedState: AppState = {
       ...defaultState,
       ...restParsed,
       goals: {
@@ -70,6 +71,11 @@ export function loadAppState(): AppState {
         ...defaultState.streaks,
         ...(restParsed.streaks ?? {}),
       },
+    };
+
+    return {
+      ...mergedState,
+      streaks: recalculateStreaks(mergedState),
     };
   } catch {
     return defaultState;
