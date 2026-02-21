@@ -1,86 +1,34 @@
-﻿# Skill: React Best Practices
+---
+name: notepad-mvp-workflow
+description: Build and iterate the MVP of the pink habits and chores tracker in this repository. Use for tasks involving Next.js App Router, React and TypeScript code in src, Tailwind UI implementation, localStorage persistence, and mobile-first layout.
+---
 
-## Purpose
-Навык для реализации и рефакторинга React/Next.js UI-кода в MVP-проекте трекера привычек с упором на читаемость, предсказуемость и простую расширяемость.
+# Notepad MVP Workflow
 
-## When to use
-- Нужно создать или изменить React-компоненты в `src/app` или `src/components`.
-- Нужно улучшить структуру состояния, props, типизацию и читаемость JSX.
-- Нужно реализовать фичу без усложнения архитектуры и без новых тяжелых зависимостей.
+## Core Rules
+- Read `AGENTS.md` and `TASKS.md` before implementation.
+- Keep application code only in `src/` (`src/app`, `src/components`, `src/lib`, `src/types`).
+- Keep architecture simple and extensible for MVP.
+- Preserve strict TypeScript compatibility.
+- Avoid extra dependencies unless explicitly requested.
+- Do not add backend, auth, or database in MVP tasks.
 
-## Do not use when
-- Требуется бэкенд, БД, авторизация или серверная бизнес-логика.
-- Нужна сложная state-экосистема (Redux/MobX и т.п.) на этапе MVP.
-- Запрос не связан с React-кодом (например, чисто DevOps/инфраструктура).
+## Delivery Flow
+1. Implement small vertical slices: screen or feature + types + storage + basic validation.
+2. Reuse shared storage helpers and persist data in `localStorage`.
+3. Keep naming and structure consistent with the project conventions.
+4. Validate changed scope with project scripts.
 
-## Project constraints
-- Стек фиксированный: Next.js (App Router), React, TypeScript, Tailwind CSS.
-- Рабочая структура только в `src/`:
-  - `src/app/...`
-  - `src/components/...`
-  - `src/lib/...`
-  - `src/types/...`
-- Хранение данных: `localStorage`.
-- UI: mobile-first, pastel pink/rose, карточки, легкие осмысленные анимации.
+## Product and UI Constraints
+- Follow the pastel pink and rose visual direction with stickers and friendly mood.
+- Prefer large cards, breathable spacing, and intentional lightweight animations.
+- Keep interfaces mobile-first and verify desktop behavior.
+- Use weekly tables and matrices where the product rules require them.
+- Keep the sleep month-circle tracker as a core visual pattern.
 
-## Alias
-- Этот навык является проектной реализацией `$vercel-react-best-practices`.
+## Quality Gates
+- No runtime errors in `npm run dev` for changed functionality.
+- No TypeScript or ESLint issues in changed files.
+- Correct read and write behavior for `localStorage` data.
+- Responsive behavior on mobile and desktop for affected screens.
 
-## Workflow
-1. Проверить существующую реализацию и переиспользовать текущие компоненты/типы, где это разумно.
-2. Спроектировать минимальный API компонента:
-   - четкие `Props`;
-   - понятные названия;
-   - минимально необходимая ответственность.
-3. Состояние держать локально в компоненте или поднимать на ближайший общий уровень.
-4. Вынести переиспользуемую логику в `src/lib` или custom hooks, только если есть реальное повторение.
-5. Для списков использовать стабильные ключи (id/date), избегать индекса массива как `key`.
-6. Сохранить strict TypeScript-типизацию:
-   - не использовать `any` без крайней необходимости;
-   - описывать доменные модели в `src/types/app.types.ts`.
-7. Синхронизацию с `localStorage` делать аккуратно:
-   - дефолтные значения при пустом хранилище;
-   - защита от битых данных (`try/catch`, fallback).
-8. Проверить адаптивность: сначала mobile, затем desktop.
-9. Прогнать проверки качества (`lint`/`build`) и убедиться в отсутствии runtime-ошибок.
-
-## Vercel/Next.js focus
-- По умолчанию использовать Server Components; добавлять `"use client"` только когда нужны события, `useState`, `useEffect` или browser API.
-- Не тащить клиентское состояние высоко по дереву без причины; оставлять интерактивность в локальных client-компонентах.
-- Данные и доменную логику хранить отдельно от UI, чтобы упростить будущую миграцию с `localStorage` на API/БД.
-- Минимизировать размер client bundle: не подключать тяжелые библиотеки ради простых UI-задач.
-- Соблюдать App Router-конвенции (`src/app/...`, сегменты и страницы), не смешивать старые паттерны Pages Router.
-- Предпочитать предсказуемые и стабильные пропсы; избегать передачи «всего состояния» в глубокие дочерние компоненты.
-
-## React best practices checklist
-- Компоненты маленькие и с одной основной ответственностью.
-- Props типизированы и не перегружены.
-- Нет дублирования состояния (derived data вычисляется, а не хранится отдельно).
-- Нет лишних `useEffect`; эффект используется только для внешних синхронизаций.
-- Обработчики и вычисления упрощены; мемоизация (`useMemo`/`useCallback`) только при реальной пользе.
-- JSX читаемый: без глубокой вложенности, крупные блоки вынесены в подкомпоненты.
-- Условный рендеринг предсказуемый (ранние `return`, явные условия).
-- Tailwind-классы сгруппированы логически, без хаотичного набора утилит.
-- Разделение server/client компонентов осознанное и минимально необходимое.
-- Нет ненужной гидратации: интерактивные части изолированы, статические остаются server-side.
-
-## Validation
-- `npm run lint`
-- `npm run build`
-- Ручная проверка ключевого сценария в `npm run dev`:
-  - изменение данных сохраняется в `localStorage`;
-  - после перезагрузки данные корректно восстанавливаются;
-  - UI не ломается на мобильной ширине.
-
-## Output format
-- Кратко описать, что изменено и почему.
-- Перечислить измененные файлы.
-- Указать результат проверок (`lint`, `build`, ручная проверка).
-- Отдельно отметить ограничения/что не делалось в рамках MVP.
-
-## Anti-patterns to avoid
-- Преждевременная абстракция и «архитектура на будущее».
-- Большие «god components» с множеством несвязанных обязанностей.
-- Неявные сайд-эффекты в рендере.
-- Нестабильные ключи в списках и мутация состояния напрямую.
-- Добавление новых зависимостей без явной необходимости.

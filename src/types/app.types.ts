@@ -21,13 +21,21 @@ export type FoodItem = {
 
 export type FoodLogByDate = Record<string, string[]>;
 
-export type WorkDaysByMonth = Record<string, string[]>;
-
 export type StickersByDate = Record<string, string>;
 
 export type WorkoutType = "gym" | "fullBody" | "legs" | "cardio" | "rest";
 
 export type WorkoutLogByDate = Record<string, WorkoutType>;
+
+export type MonthTrackerColor = "green" | "mint" | "sky" | "amber" | "rose";
+
+export type MonthTracker = {
+  id: string;
+  title: string;
+  color: MonthTrackerColor;
+};
+
+export type MonthTrackerLogByDate = Record<string, string[]>;
 
 export type AppState = {
   version: 1;
@@ -42,7 +50,8 @@ export type AppState = {
   chores: Chore[];
   choreLogByDate: Record<string, string[]>;
   workoutLogByDate: WorkoutLogByDate;
-  workDaysByMonth: WorkDaysByMonth;
+  monthTrackers: MonthTracker[];
+  monthTrackerLogByDate: MonthTrackerLogByDate;
   stickersByDate: StickersByDate;
   streaks: {
     currentDays: number;
