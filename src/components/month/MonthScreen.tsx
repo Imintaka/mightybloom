@@ -361,6 +361,8 @@ export function MonthScreen() {
         </p>
       </Card>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
+
       <Card className="paper-grid">
         <div className="flex flex-col items-center">
           <h2 className="text-lg font-semibold text-rose-950">Круговой трекер сна</h2>
@@ -404,6 +406,8 @@ export function MonthScreen() {
           </div>
         </div>
       </Card>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 
       <Card>
         <h2 className="text-lg font-semibold text-rose-950">Резервный вид: трекер-сетка месяца</h2>
@@ -509,6 +513,8 @@ export function MonthScreen() {
           })}
         </div>
       </Card>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 
       <Card>
         <h2 className="text-lg font-semibold text-rose-950">Редактирование дня: {selectedDateKey}</h2>

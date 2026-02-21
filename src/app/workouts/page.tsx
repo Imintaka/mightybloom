@@ -54,6 +54,8 @@ export default function WorkoutsPage() {
         </p>
       </Card>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
+
       <Card>
         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
           <span className="rounded-full border border-rose-200 bg-rose-100/80 px-3 py-1 font-semibold text-rose-900">зал</span>

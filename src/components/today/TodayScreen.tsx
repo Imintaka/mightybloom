@@ -63,6 +63,8 @@ export function TodayScreen() {
   const [today] = useState(() => new Date());
   const todayKey = useMemo(() => formatDateKey(today), [today]);
   const [waterToAdd, setWaterToAdd] = useState("");
+  const [sleepToAdd, setSleepToAdd] = useState("");
+  const [stepsToAdd, setStepsToAdd] = useState("");
   const [todayChoreInput, setTodayChoreInput] = useState("");
 
   const [appState, setAppState] = useState<AppState>(() => {
@@ -160,6 +162,28 @@ export function TodayScreen() {
     setWaterToAdd("");
   };
 
+  const addSleepIntake = () => {
+    const portion = parseNumericInput(sleepToAdd);
+    if (!portion || portion <= 0) {
+      return;
+    }
+
+    const currentSleep = dayMetrics.sleepHours ?? 0;
+    updateTodayMetrics({ sleepHours: currentSleep + portion });
+    setSleepToAdd("");
+  };
+
+  const addStepsIntake = () => {
+    const portion = parseNumericInput(stepsToAdd);
+    if (!portion || portion <= 0) {
+      return;
+    }
+
+    const currentSteps = dayMetrics.steps ?? 0;
+    updateTodayMetrics({ steps: currentSteps + portion });
+    setStepsToAdd("");
+  };
+
   const toggleChoreDone = (choreId: string) => {
     setAppState((prev) => {
       const done = new Set(prev.choreLogByDate[todayKey] ?? []);
@@ -201,7 +225,7 @@ export function TodayScreen() {
 
   return (
     <Container className="space-y-5 pb-12">
-      <Card className="paper-grid relative overflow-hidden bg-gradient-to-br from-rose-100/80 via-pink-50/90 to-white">
+      <Card className="paper-grid relative overflow-hidden border border-rose-200/80 bg-gradient-to-br from-rose-100/80 via-pink-50/90 to-white">
         <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-rose-200/55 blur-2xl" />
         <div className="pointer-events-none absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-pink-200/40 blur-2xl" />
         <div className="relative flex items-start justify-between gap-3">
@@ -218,6 +242,8 @@ export function TodayScreen() {
           ) : null}
         </div>
       </Card>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 
       <Card>
         <h2 className="text-lg font-semibold text-rose-950">Метрики дня</h2>
@@ -273,14 +299,24 @@ export function TodayScreen() {
             <p className="mt-1 text-xs text-zinc-700/90">
               Цель: {sleepGoalHours} ч. Прогресс {Math.min(sleepCurrentHours, sleepGoalHours)} / {sleepGoalHours}.
             </p>
-            <Input
-              type="number"
-              min={0}
-              placeholder="0"
-              value={dayMetrics.sleepHours ?? ""}
-              onChange={(event) => updateTodayMetrics({ sleepHours: parseNumericInput(event.target.value) })}
-              className="mt-2"
-            />
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                type="number"
+                min={0}
+                placeholder="Сколько добавить"
+                value={sleepToAdd}
+                onChange={(event) => setSleepToAdd(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addSleepIntake();
+                  }
+                }}
+              />
+              <Button className="h-11 min-w-28 px-4" onClick={addSleepIntake}>
+                Добавить
+              </Button>
+            </div>
           </label>
 
           <label className="rounded-2xl border border-rose-200/80 bg-white/70 p-3.5">
@@ -296,14 +332,24 @@ export function TodayScreen() {
               </div>
             </div>
             <p className="mt-1 text-xs text-amber-800/90">Цель: {stepsGoal}. Прогресс {Math.min(stepsCurrent, stepsGoal)} / {stepsGoal}.</p>
-            <Input
-              type="number"
-              min={0}
-              placeholder="0"
-              value={dayMetrics.steps ?? ""}
-              onChange={(event) => updateTodayMetrics({ steps: parseNumericInput(event.target.value) })}
-              className="mt-2"
-            />
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                type="number"
+                min={0}
+                placeholder="Сколько добавить"
+                value={stepsToAdd}
+                onChange={(event) => setStepsToAdd(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addStepsIntake();
+                  }
+                }}
+              />
+              <Button className="h-11 min-w-28 px-4" onClick={addStepsIntake}>
+                Добавить
+              </Button>
+            </div>
           </label>
 
           <div className="rounded-2xl border border-rose-200/80 bg-rose-50/70 p-3.5">
@@ -321,33 +367,35 @@ export function TodayScreen() {
         </div>
       </Card>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
+
       <Card>
         <h2 className="text-lg font-semibold text-rose-950">Прогресс дня</h2>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
           <div
             className={`rounded-2xl px-3 py-2 font-medium ${
-              dayProgress.waterClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+              dayProgress.waterClosed ? "sparkle-girl bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
             }`}
           >
             Вода
           </div>
           <div
             className={`rounded-2xl px-3 py-2 font-medium ${
-              dayProgress.sleepClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+              dayProgress.sleepClosed ? "sparkle-girl bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
             }`}
           >
             Сон
           </div>
           <div
             className={`rounded-2xl px-3 py-2 font-medium ${
-              dayProgress.stepsClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+              dayProgress.stepsClosed ? "sparkle-girl bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
             }`}
           >
             Шаги
           </div>
           <div
             className={`rounded-2xl px-3 py-2 font-medium ${
-              dayProgress.workoutClosed ? "bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
+              dayProgress.workoutClosed ? "sparkle-girl bg-rose-300/80 text-rose-950" : "bg-rose-50 text-rose-700"
             }`}
           >
             Тренировка
@@ -358,13 +406,15 @@ export function TodayScreen() {
           <span className="font-semibold text-rose-950">{dayProgress.dayClosed ? "день закрыт" : "в процессе"}</span>.
         </p>
         {dayProgress.dayClosed ? (
-          <p className="mt-2 rounded-2xl bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900">
+          <p className="sparkle-girl-soft mt-2 rounded-2xl bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900">
             {stickerConfig?.phrase ?? getStickerByTrackers(dayProgress.closedCount).phrase}
           </p>
         ) : (
           <p className="mt-2 text-sm text-rose-700">Чтобы закрыть день, нужно выполнить минимум 2 раздела.</p>
         )}
       </Card>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 
       <Card>
         <div className="flex items-center justify-between gap-3">

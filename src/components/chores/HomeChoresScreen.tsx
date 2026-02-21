@@ -295,6 +295,8 @@ export function HomeChoresScreen() {
         </p>
       </Card>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
+
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold text-rose-900">Неделя: {selectedWeekLabel}</p>
@@ -370,6 +372,8 @@ export function HomeChoresScreen() {
           </Button>
         ) : null}
       </Card>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
 
       <Card>
         <h2 className="text-lg font-semibold text-rose-950">Weekly-матрица выполнения</h2>

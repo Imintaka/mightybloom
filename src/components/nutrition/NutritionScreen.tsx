@@ -182,6 +182,8 @@ export function NutritionScreen() {
         </p>
       </Card>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-rose-300/70 to-transparent" />
+
       <Card>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-rose-950">Матрица недели</h2>
