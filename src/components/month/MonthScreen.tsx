@@ -140,7 +140,7 @@ function CircleDayNode({
   onClick: () => void;
 }) {
   const angle = (360 / total) * index;
-  const daySizeClass = total > 30 ? "h-9 w-9 text-[11px]" : "h-10 w-10 text-xs";
+  const daySizeClass = total > 30 ? "h-9 w-9 min-h-10 min-w-10 text-[11px]" : "h-10 w-10 text-xs";
   const ringRadius = total > 30 ? 150 : 146;
   const sleepClass =
     sleepState === "high"
@@ -155,7 +155,7 @@ function CircleDayNode({
     <button
       type="button"
       onClick={onClick}
-      className={`absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl border font-semibold shadow-sm transition duration-200 hover:scale-105 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${daySizeClass} ${sleepClass} ${
+      className={`absolute left-1/2 top-1/2 flex items-center justify-center rounded-2xl border font-semibold shadow-sm transition duration-200 hover:scale-105 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50 ${daySizeClass} ${sleepClass} ${
         selected ? "ring-2 ring-rose-500 ring-offset-2 ring-offset-rose-100" : ""
       }`}
       style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-${ringRadius}px) rotate(${-angle}deg)` }}
@@ -357,10 +357,10 @@ export function MonthScreen() {
             <p className="mt-1 text-sm font-medium text-rose-800/85">Круговой трекер сна и редактирование дня</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" className="h-9 px-3" onClick={() => goToMonth(-1)}>
+            <Button variant="secondary" className="h-10 px-3" onClick={() => goToMonth(-1)}>
               Назад
             </Button>
-            <Button variant="secondary" className="h-9 px-3" onClick={() => goToMonth(1)}>
+            <Button variant="secondary" className="h-10 px-3" onClick={() => goToMonth(1)}>
               Вперед
             </Button>
           </div>
@@ -443,7 +443,7 @@ export function MonthScreen() {
                   key={color}
                   type="button"
                   onClick={() => setNewTrackerColor(color)}
-                  className={`h-7 w-7 rounded-full border transition duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${style.picker} ${
+                  className={`h-10 w-10 rounded-full border transition duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${style.picker} ${
                     newTrackerColor === color ? style.pickerActive : ""
                   }`}
                   aria-label={`Цвет трекера: ${color}`}
@@ -511,7 +511,7 @@ export function MonthScreen() {
                 key={dateKey}
                 type="button"
                 onClick={() => toggleActiveTrackerDay(dateKey)}
-                className={`h-14 rounded-xl border border-rose-200/85 p-1 text-left transition duration-200 hover:scale-[1.02] hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${bgClass} ${
+                className={`h-14 rounded-xl border border-rose-200/85 p-1 text-left transition duration-200 hover:scale-[1.02] hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50 ${bgClass} ${
                   selectedDateKey === dateKey ? "ring-2 ring-rose-500 ring-offset-1 ring-offset-rose-50" : ""
                 }`}
               >

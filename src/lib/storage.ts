@@ -1,4 +1,4 @@
-import { recalculateStreaks } from "@/lib/gamification";
+﻿import { recalculateStreaks } from "@/lib/gamification";
 import type { AppState } from "@/types/app.types";
 
 export const STORAGE_KEY = "notepad-app-state-v1";

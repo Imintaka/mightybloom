@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -308,6 +308,7 @@ export function TodayScreen() {
                 type="number"
                 min={0}
                 placeholder="Сколько добавить"
+                aria-label="Добавить воду в миллилитрах"
                 value={waterToAdd}
                 onChange={(event) => setWaterToAdd(event.target.value)}
                 onKeyDown={(event) => {
@@ -344,6 +345,7 @@ export function TodayScreen() {
                 type="number"
                 min={0}
                 placeholder="Сколько добавить"
+                aria-label="Добавить сон в часах"
                 value={sleepToAdd}
                 onChange={(event) => setSleepToAdd(event.target.value)}
                 onKeyDown={(event) => {
@@ -377,6 +379,7 @@ export function TodayScreen() {
                 type="number"
                 min={0}
                 placeholder="Сколько добавить"
+                aria-label="Добавить шаги"
                 value={stepsToAdd}
                 onChange={(event) => setStepsToAdd(event.target.value)}
                 onKeyDown={(event) => {
@@ -431,7 +434,7 @@ export function TodayScreen() {
         </div>
 
         {motivationText ? (
-          <p className="mt-3 rounded-2xl border border-rose-200 bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900">
+          <p className="mt-3 rounded-2xl border border-rose-200 bg-rose-100/80 px-3 py-2 text-sm font-medium text-rose-900" role="status" aria-live="polite">
             {motivationText}
           </p>
         ) : null}
@@ -523,7 +526,7 @@ export function TodayScreen() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className={`text-sm font-medium ${done ? "text-rose-500 line-through" : "text-rose-950"}`}>{chore.title}</p>
-                    <Button variant={done ? "primary" : "secondary"} className="h-9 px-3" onClick={() => toggleChoreDone(chore.id)}>
+                    <Button variant={done ? "primary" : "secondary"} className="h-10 px-3 text-sm" onClick={() => toggleChoreDone(chore.id)}>
                       {done ? "Сделано" : "Отметить"}
                     </Button>
                   </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -227,7 +227,11 @@ export function NutritionScreen() {
                           isSelected ? "bg-rose-300/90 text-rose-950" : "bg-rose-100/80 text-rose-800"
                         }`}
                       >
-                        <button type="button" onClick={() => setSelectedDate(day.key)} className="w-full cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDate(day.key)}
+                          className="w-full rounded-lg py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50"
+                        >
                           <span className="block">{WEEKDAY_LABELS[index]}</span>
                           <span className="block text-xs font-normal">{day.dayOfMonth}</span>
                         </button>
@@ -253,10 +257,10 @@ export function NutritionScreen() {
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Button variant="secondary" className="h-8 px-2 text-xs" onClick={() => startEditFoodItem(foodItem)}>
+                          <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => startEditFoodItem(foodItem)}>
                             Ред.
                           </Button>
-                          <Button variant="secondary" className="h-8 px-2 text-xs" onClick={() => deleteFoodItem(foodItem.id)}>
+                          <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => deleteFoodItem(foodItem.id)}>
                             Уд.
                           </Button>
                         </div>
@@ -274,7 +278,7 @@ export function NutritionScreen() {
                           <button
                             type="button"
                             onClick={() => toggleFoodMark(day.key, foodItem.id)}
-                            className={`h-9 w-9 rounded-xl border text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${
+                            className={`h-10 w-10 rounded-xl border text-sm font-semibold transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50 ${
                               isMarked
                                 ? "border-rose-500 bg-rose-500 text-white"
                                 : isSelected

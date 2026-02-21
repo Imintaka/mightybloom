@@ -1,4 +1,4 @@
-export type StickerAsset = {
+﻿export type StickerAsset = {
   id: string;
   imageSrc: string;
   alt: string;

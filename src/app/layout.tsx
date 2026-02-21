@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { MainNav } from "@/components/layout/MainNav";
 import "./globals.css";
 

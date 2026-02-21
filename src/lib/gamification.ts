@@ -1,4 +1,4 @@
-import { getDayProgress } from "@/lib/dayProgress";
+﻿import { getDayProgress } from "@/lib/dayProgress";
 import { formatDateKey, parseDateKey } from "@/lib/dates";
 import type { AppState } from "@/types/app.types";
 

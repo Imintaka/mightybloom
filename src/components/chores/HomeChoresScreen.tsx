@@ -301,13 +301,13 @@ export function HomeChoresScreen() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold text-rose-900">Неделя: {selectedWeekLabel}</p>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setSelectedDate((prev) => shiftDateKeyByDays(prev, -7))}>
+            <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => setSelectedDate((prev) => shiftDateKeyByDays(prev, -7))}>
               Пред.
             </Button>
-            <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setSelectedDate(formatDateKey(new Date()))}>
+            <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => setSelectedDate(formatDateKey(new Date()))}>
               Текущая
             </Button>
-            <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setSelectedDate((prev) => shiftDateKeyByDays(prev, 7))}>
+            <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => setSelectedDate((prev) => shiftDateKeyByDays(prev, 7))}>
               След.
             </Button>
           </div>
@@ -349,7 +349,7 @@ export function HomeChoresScreen() {
                     selected
                       ? "border-rose-500 bg-rose-500 text-white"
                       : "border-rose-200 bg-white/90 text-rose-800 hover:bg-rose-100"
-                  }`}
+                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50`}
                 >
                   {label}
                 </button>
@@ -396,7 +396,11 @@ export function HomeChoresScreen() {
                           isSelected ? "bg-rose-300/90 text-rose-950" : "bg-rose-100/80 text-rose-800"
                         }`}
                       >
-                        <button type="button" onClick={() => setSelectedDate(day.key)} className="w-full cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDate(day.key)}
+                          className="w-full rounded-lg py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50"
+                        >
                           <span className="block">{WEEKDAY_SHORT_LABELS[index]}</span>
                           <span className="block text-xs font-normal">{day.dayOfMonth}</span>
                         </button>
@@ -412,10 +416,10 @@ export function HomeChoresScreen() {
                       <p className="truncate font-medium">{chore.title}</p>
                       <p className="mt-1 text-xs text-rose-600">{getScheduleText(chore.schedule)}</p>
                       <div className="mt-2 flex items-center gap-1">
-                        <Button variant="secondary" className="h-8 px-2 text-xs" onClick={() => startEditChore(chore)}>
+                        <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => startEditChore(chore)}>
                           Ред.
                         </Button>
-                        <Button variant="secondary" className="h-8 px-2 text-xs" onClick={() => deleteChore(chore.id)}>
+                        <Button variant="secondary" className="h-10 px-3 text-sm" onClick={() => deleteChore(chore.id)}>
                           Удалить
                         </Button>
                       </div>
@@ -437,7 +441,7 @@ export function HomeChoresScreen() {
                             type="button"
                             onClick={() => toggleChoreMark(day.key, chore.id, canToggle)}
                             disabled={!canToggle}
-                            className={`h-9 w-9 rounded-xl border text-sm font-semibold transition duration-200 ${
+                            className={`h-10 w-10 rounded-xl border text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-rose-50 ${
                               marked
                                 ? "border-rose-500 bg-rose-500 text-white"
                                 : plannedBySchedule
