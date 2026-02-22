@@ -5,8 +5,19 @@ node_modules/
 .next/
 out/
 
+# build/test artifacts
+dist/
+coverage/
+
 # local env files
+.env
 .env*.local
+.env.development
+.env.test
+.env.production
+
+# vercel
+.vercel/
 
 # logs
 npm-debug.log*
@@ -15,7 +26,20 @@ yarn-error.log*
 pnpm-debug.log*
 *.log
 
+# typescript
+*.tsbuildinfo
+
+# local notes / assistant drafts (keep project docs committed)
+*.local.md
+
+# project helper docs (temporary ignore)
+AGENTS.md
+TASKS.md
+SKILL.md
+MIGRATION_TO_SUPABASE.md
+
 # editor / OS
 .idea/
+.vscode/
 .DS_Store
 Thumbs.db
