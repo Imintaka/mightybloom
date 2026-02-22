@@ -3,8 +3,13 @@ import { MainNav } from "@/components/layout/MainNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Трекер привычек",
-  description: "MVP трекер привычек и дел",
+  title: "MightyBloom",
+  description: "MightyBloom — трекер привычек и дел со стикерами",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 type RootLayoutProps = Readonly<{
